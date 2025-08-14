@@ -5,6 +5,9 @@ enum Sound {
     C,
     Ch,
     D,
+    Dx,
+    Dz,
+    Dh,
     E,
     Ex,
     F,
@@ -39,7 +42,14 @@ enum Sound {
 impl Sound {
     fn is_softened(self) -> bool {
         match self {
-            Sound::I | Sound::Sx | Sound::Zx | Sound::L | Sound::Nx | Sound::Tx| Sound::Rx => true,
+            Sound::I
+            | Sound::Sx
+            | Sound::Zx
+            | Sound::L
+            | Sound::Nx
+            | Sound::Tx
+            | Sound::Rx
+            | Sound::Dx => true,
             _ => false,
         }
     }
@@ -58,10 +68,10 @@ impl Sound {
         }
     }
 
-    fn transferable_softening(self) -> bool {
-        // Chyba nie L
-        return self.is_softened();
-    }
+    // fn transferable_softening(self) -> bool {
+    //     // Chyba nie L
+    //     return self.is_softened();
+    // }
 }
 
 mod greek {
@@ -72,7 +82,7 @@ mod greek {
 
     use super::Sound;
 
-    fn do_the_job(input: &[Sound]) -> Vec<Greek> {
+    pub fn do_the_job(input: &[Sound]) -> Vec<Greek> {
         let mut result = vec![];
         let mut i = 0;
 
@@ -80,17 +90,16 @@ mod greek {
             let consume_result = consume_greek(&input[i..]);
             result.extend(consume_result.result);
             i += consume_result.consumed;
-            println!(
-                "Consumed {} sounds, result so far: {:?}",
-                consume_result.consumed,
-                result
-            );
+            // println!(
+            //     "Consumed {} sounds, result so far: {:?}",
+            //     consume_result.consumed, result
+            // );
         }
 
         result
     }
 
-    fn to_greek(input: &Vec<Sound>) -> String {
+    pub fn to_greek(input: &Vec<Sound>) -> String {
         let greek_chars = do_the_job(input);
         greek_chars.iter().map(|&g| to_char(g)).collect()
     }
@@ -103,6 +112,7 @@ mod greek {
             Sound::C => vec![Tau, Sigma],
             Sound::Ch => vec![Theta],
             Sound::D => vec![Delta],
+            Sound::Dx => vec![Delta, Acute],
             Sound::E => vec![Epsilon],
             Sound::Ex => vec![Eta],
             Sound::F => vec![Phi],
@@ -132,7 +142,8 @@ mod greek {
             Sound::Zx => vec![Zeta, Acute],
             Sound::Zh => vec![Xi],
             Sound::Rx => vec![Rho, Acute],
-    
+            Sound::Dz => vec![Delta, Zeta],
+            Sound::Dh => vec![Delta, Xi],
         }
     }
 
@@ -147,6 +158,7 @@ mod greek {
             Nx => Nu,
             I => Iota,
             Rx => Rho,
+            Dx => Delta,
             _ => panic!("Unexpected softened sound: {:?}", s),
         }
     }
@@ -183,18 +195,20 @@ mod greek {
         }
 
         let mut softened_count = 0;
-        while softened_count < input.len() && input[softened_count].is_softened() && input[softened_count] != Sound::I {
+        while softened_count < input.len()
+            && input[softened_count].is_softened()
+            && input[softened_count] != Sound::I
+        {
             softened_count += 1;
         }
 
         if softened_count > 0 {
-            println!("Softened count: {}", softened_count);
+            // println!("Softened count: {}", softened_count);
             let following_vowel = input.get(softened_count).cloned().filter(|x| x.is_vowel());
             let total_consumed = softened_count + following_vowel.map_or(0, |_| 1);
 
-
-            let last_greek:Greek = match following_vowel {
-                Some(vowel) => soften_vowel( vowel), // todo what if not-softened
+            let last_greek: Greek = match following_vowel {
+                Some(vowel) => soften_vowel(vowel), // todo what if not-softened
                 None => Greek::Acute,
             };
 
@@ -214,20 +228,19 @@ mod greek {
         use Sound::*;
         if i0 == Sound::J {
             let i1 = input.get(1).unwrap().clone();
-            if i1 == E || i1 == A || i1 == Ex  || i1==Ox || i1==U {
+            if i1 == E || i1 == A || i1 == Ex || i1 == Ox || i1 == U {
                 return ConsumeResult {
                     result: vec![soften_vowel(i1)],
                     consumed: 2,
                 };
-                // TODO Case for I Y 
-            }else {
+                // TODO Case for I Y
+            } else {
                 return ConsumeResult {
                     result: vec![Greek::Acute],
                     consumed: 1,
                 };
             }
         }
-
 
         // print!("FALLBACK TO NAIVE CONSUME: {:?}", i0);
         return ConsumeResult {
@@ -345,31 +358,29 @@ mod greek {
             let result = to_greek(&input);
             assert_eq!(result, "τσαλοστ'");
 
-            let input = vec![R, A, D, O, Sx, Tx,I];
+            let input = vec![R, A, D, O, Sx, Tx, I];
             let result = to_greek(&input);
             assert_eq!(result, "ραδοστί");
 
+            assert_eq!(to_greek(&vec![L, I, T, W, O]), "λίτβο");
+            assert_eq!(to_greek(&vec![O, J, Ch, Y, Z, N, O]), "ο'θιζνο");
+            assert_eq!(to_greek(&vec![M, O, J, A]), "μοά");
+            assert_eq!(to_greek(&vec![T, Y]), "τι");
+            assert_eq!(to_greek(&vec![J, E, S, T, E, Sx]), "έστεσ'");
+            assert_eq!(to_greek(&vec![J, A, K]), "άκ");
+            assert_eq!(to_greek(&vec![Z, D, R, O, W, J, E]), "ζδροβέ");
 
-            assert_eq!( to_greek(&vec![L,I,T,W,O]), "λίτβο");
-            assert_eq!( to_greek(& vec![O,J,Ch,Y,Z,N,O]), "ο'θιζνο");
-            assert_eq!( to_greek(& vec![M,O,J,A]), "μοά");
-            assert_eq!( to_greek(& vec![T,Y]), "τι");
-            assert_eq!( to_greek(& vec![J,E,S,T,E,Sx]), "έστεσ'");
-            assert_eq!( to_greek(&vec![J,A,K]), "άκ");
-            assert_eq!( to_greek(& vec![Z,D,R,O,W,J,E]), "ζδροβέ");
-
-            assert_eq!( to_greek(& vec![I,L,E]), "ίλέ");
-            assert_eq!( to_greek(& vec![Tx,Ex]), "τή");
-            assert_eq!( to_greek(& vec![T,Rx,E,B,A]), "τρέμπα");
-            assert_eq!( to_greek(& vec![C,E,Nx,I,Tx]), "τσενίτ'");
-            assert_eq!( to_greek(& vec![T,E,N]), "τεν");
-            assert_eq!( to_greek(& vec![T,Y,L,K,O]), "τιλ'κο");
-            assert_eq!( to_greek(& vec![Sx,Ex]), "σή");
-            assert_eq!( to_greek(& vec![D,O,W,J,E]), "δοβέ");
-            assert_eq!( to_greek(& vec![C,O]), "τσο");
-            assert_eq!( to_greek(& vec![Tx,Ex]), "τή");
-            assert_eq!( to_greek(& vec![S,T,R,A,Tx,I,Lx]), "στρατίλ");
-            
+            assert_eq!(to_greek(&vec![I, L, E]), "ίλέ");
+            assert_eq!(to_greek(&vec![Tx, Ex]), "τή");
+            assert_eq!(to_greek(&vec![T, Rx, E, B, A]), "τρέμπα");
+            assert_eq!(to_greek(&vec![C, E, Nx, I, Tx]), "τσενίτ'");
+            assert_eq!(to_greek(&vec![T, E, N]), "τεν");
+            assert_eq!(to_greek(&vec![T, Y, L, K, O]), "τιλ'κο");
+            assert_eq!(to_greek(&vec![Sx, Ex]), "σή");
+            assert_eq!(to_greek(&vec![D, O, W, J, E]), "δοβέ");
+            assert_eq!(to_greek(&vec![C, O]), "τσο");
+            assert_eq!(to_greek(&vec![Tx, Ex]), "τή");
+            assert_eq!(to_greek(&vec![S, T, R, A, Tx, I, Lx]), "στρατίλ");
         }
 
         //  #[test]
@@ -378,5 +389,323 @@ mod greek {
 
         // assert_eq!( to_greek(&vec![J,A,K]), "άκ");
         // }
+    }
+}
+
+mod official {
+    use super::Sound;
+    use super::Sound::*;
+
+    struct ConsumeResult {
+        result: Vec<Sound>,
+        consumed: usize,
+    }
+     fn parse_word(input: &str) -> ConsumeResult {
+        let charsi = input.chars().collect::<Vec<char>>();
+        let mut i = 0;
+        let mut result = vec![];
+        while i < charsi.len() {
+            // println!("MAMY I: {} ", i);
+            let chars = &charsi[i..];
+            let cr = try_dzx(chars);
+            if cr.consumed > 0 {
+                result.extend(cr.result);
+                i += cr.consumed;
+                continue;
+            }
+
+            
+            if chars.len() >=2 && chars[0] == 'd' && chars[1] == 'ż' {
+                result.push(Dh);
+                i += 2;
+                continue;
+            }
+
+
+            let cr = try_ci_si_zi(chars);
+            if cr.consumed > 0 {
+                result.extend(cr.result);
+                i += cr.consumed;
+                continue;
+            }
+
+            if let Some((dwuznak_sound, consumed)) = try_dwuznak(chars) {
+                result.push(dwuznak_sound);
+                i += consumed;
+                continue;
+            }
+
+            if let Some(single_sound) = single_naive(charsi[i]) {
+                result.push(single_sound);
+                i += 1;
+                continue;
+            }
+            // nothing found to parse
+            break;
+        }
+
+        ConsumeResult {
+            result: result,
+            consumed: i,
+        }
+    }
+
+    fn try_ci_si_zi(input: &[char]) -> ConsumeResult {
+        if input.len() < 2 {
+            return ConsumeResult {
+                result: vec![],
+                consumed: 0,
+            };
+        }
+
+        let i0 = input[0];
+
+        let okk = match i0 {
+            'c' => Some(Tx),
+            's' => Some(Sx),
+            'z' => Some(Zx),
+            'n' => Some(Nx),
+            _ => None,
+        };
+
+        match okk {
+            Some(initSound) => {
+                if input.len() == 2 {
+                    if input[1] == 'i' {
+                        ConsumeResult {
+                            result: vec![initSound, I],
+                            consumed: 2,
+                        }
+                    } else {
+                        ConsumeResult {
+                            result: vec![],
+                            consumed: 0,
+                        }
+                    }
+                } else {
+                    let i2 = input[2];
+
+                    match i2 {
+                        'a' => ConsumeResult {
+                            result: vec![initSound, Sound::A],
+                            consumed: 3,
+                        },
+                        'ą' => ConsumeResult {
+                            result: vec![initSound, Sound::Ox],
+                            consumed: 3,
+                        },
+                        'e' => ConsumeResult {
+                            result: vec![initSound, Sound::E],
+                            consumed: 3,
+                        },
+                        'ę' => ConsumeResult {
+                            result: vec![initSound, Sound::Ex],
+                            consumed: 3,
+                        },
+                        'o' => ConsumeResult {
+                            result: vec![initSound, Sound::O],
+                            consumed: 3,
+                        },
+                        'ó' => ConsumeResult {
+                            result: vec![initSound, Sound::U],
+                            consumed: 3,
+                        },
+                        'u' => ConsumeResult {
+                            result: vec![initSound, Sound::U],
+                            consumed: 3,
+                        },
+                        _ => ConsumeResult {
+                            result: vec![initSound, Sound::I],
+                            consumed: 2,
+                        },
+                    }
+                }
+            }
+            None => ConsumeResult {
+                result: vec![],
+                consumed: 0,
+            },
+        }
+    }
+
+    fn try_dzx(input: &[char]) -> ConsumeResult {
+        if input.len() < 3 {
+            return ConsumeResult {
+                result: vec![],
+                consumed: 0,
+            };
+        }
+
+        let i0 = input[0];
+        if i0 != 'd' {
+            return ConsumeResult {
+                result: vec![],
+                consumed: 0,
+            };
+        }
+        let i1 = input[1];
+
+        match (i0, i1) {
+            ('d', 'z') => {
+                if input.len() == 3 && input[2] == 'i' {
+                    ConsumeResult {
+                        result: vec![Sound::Dx, Sound::I],
+                        consumed: 3,
+                    }
+                } else if input.len() > 3 {
+                    let i2 = input[2];
+                    let i3 = input[3];
+                    if i2 != 'i' {
+                        ConsumeResult {
+                            result: vec![],
+                            consumed: 0,
+                        }
+                    } else {
+                        match i3 {
+                            'a' => ConsumeResult {
+                                result: vec![Sound::Dx, Sound::A],
+                                consumed: 4,
+                            },
+                            'ą' => ConsumeResult {
+                                result: vec![Sound::Dx, Sound::Ox],
+                                consumed: 4,
+                            },
+                            'e' => ConsumeResult {
+                                result: vec![Sound::Dx, Sound::E],
+                                consumed: 4,
+                            },
+                            'ę' => ConsumeResult {
+                                result: vec![Sound::Dx, Sound::Ex],
+                                consumed: 4,
+                            },
+                            'o' => ConsumeResult {
+                                result: vec![Sound::Dx, Sound::O],
+                                consumed: 4,
+                            },
+                            'ó' => ConsumeResult {
+                                result: vec![Sound::Dx, Sound::U],
+                                consumed: 4,
+                            },
+                            'u' => ConsumeResult {
+                                result: vec![Sound::Dx, Sound::U],
+                                consumed: 4,
+                            },
+                            _ => ConsumeResult {
+                                result: vec![Sound::Dx, Sound::I],
+                                consumed: 3,
+                            },
+                        }
+                    }
+                } else {
+                    ConsumeResult {
+                        result: vec![],
+                        consumed: 2,
+                    }
+                }
+            }
+
+            _ => ConsumeResult {
+                result: vec![],
+                consumed: 0,
+            },
+        }
+    }
+
+    fn try_dwuznak(input: &[char]) -> Option<(Sound, usize)> {
+        if input.len() < 2 {
+            return None;
+        }
+
+        let i0 = input[0];
+        let i1 = input[1];
+
+        match (i0, i1) {
+            ('c', 'z') => Some((Ch, 2)),
+            ('s', 'z') => Some((Sh, 2)),
+            ('d', 'z') => Some((Dz, 2)),
+            ('d', 'ź') => Some((Dx, 2)),
+            ('r', 'z') => Some((Rx, 2)),
+            ('l', 'x') => Some((Lx, 2)),
+            _ => None,
+        }
+    }
+
+    fn single_naive(c: char) -> Option<Sound> {
+        match c {
+            'a' => Some(A),
+            'ą' => Some(Ox),
+            'b' => Some(B),
+            'c' => Some(C),
+            'ć' => Some(Tx),
+            'd' => Some(D),
+            'e' => Some(E),
+            'ę' => Some(Ex),
+            'f' => Some(F),
+            'g' => Some(G),
+            'h' => Some(H),
+            'i' => Some(I),
+            'j' => Some(J),
+            'k' => Some(K),
+            'l' => Some(L),
+            'ł' => Some(Lx),
+            'm' => Some(M),
+            'n' => Some(N),
+            'o' => Some(O),
+            'ó' => Some(U), // TODO wsparcie dla ou
+            'p' => Some(P),
+            'r' => Some(R),
+            's' => Some(S),
+            'ś' => Some(Sx),
+            't' => Some(T),
+            'u' => Some(U),
+            'w' => Some(W),
+            'y' => Some(Y),
+            'z' => Some(Z),
+            'ż' => Some(Zh),
+            'ź' => Some(Zx),
+            _ => None,
+        }
+    }
+
+    #[cfg(test)]
+    mod tests {
+        use super::*;
+
+        #[test]
+        fn wejście() {
+            let input = "test";
+            let result = parse_word(input);
+            assert_eq!(result.result, vec![Sound::T, Sound::E, Sound::S, Sound::T]);
+            assert_eq!(result.consumed, 4);
+
+            let input = "działo";
+            let result = parse_word(input);
+            assert_eq!(
+                result.result,
+                vec![Sound::Dx, Sound::A, Sound::Lx, Sound::O]
+            );
+            assert_eq!(result.consumed, 6);
+
+            let input = "działało";
+            let result = parse_word(input);
+            assert_eq!(
+                result.result,
+                vec![
+                    Sound::Dx,
+                    Sound::A,
+                    Sound::Lx,
+                    Sound::A,
+                    Sound::Lx,
+                    Sound::O
+                ]
+            );
+            assert_eq!(result.consumed, 8);
+
+            use super::Sound::*;
+            let input = "ciaksiakizilni";
+            let result = parse_word(input);
+            assert_eq!(result.result, vec![Tx, A, K, Sx, A, K, I, Zx, I, L, Nx, I]);
+            assert_eq!(result.consumed, 14);
+        }
     }
 }
