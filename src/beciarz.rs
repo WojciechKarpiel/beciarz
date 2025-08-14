@@ -274,10 +274,11 @@ mod greek {
         // print!("FALLBACK TO NAIVE CONSUME: {:?}", i0);
         // check for break
         let i1 = input.get(1).unwrap().clone();
-        if i1 == J || i1 == I { //|| i1 == Nx || i1 == Zx || i1 == Sx || i1 == Tx  || i1 == Dx ||i1==Rx{
-            if i0 == N || i0 ==Z || i0 == S || i0 == T || i0==D || i0 ==R{
+        if i1 == J || i1 == I {
+            //|| i1 == Nx || i1 == Zx || i1 == Sx || i1 == Tx  || i1 == Dx ||i1==Rx{
+            if i0 == N || i0 == Z || i0 == S || i0 == T || i0 == D || i0 == R {
                 // println!("BREAKING: {:?}", i0);
-                let mut r0=consume_naive(i0);
+                let mut r0 = consume_naive(i0);
                 r0.push(Greek::Break);
                 return ConsumeResult {
                     result: r0,
@@ -777,6 +778,7 @@ mod official {
             ('d', 'ź') => Some((Dx, 2)),
             ('r', 'z') => Some((Rx, 2)),
             ('l', 'x') => Some((Lx, 2)),
+            ('c', 'h') => Some((H, 2)),
             _ => None,
         }
     }
@@ -862,6 +864,11 @@ mod official {
             let result = parse_word(input.chars().collect::<Vec<_>>().as_slice());
             assert_eq!(result.result, vec![O, J, Ch, Y, Z, N, O]);
             assert_eq!(result.consumed, 8);
+
+            let input = "chmura";
+            let result = parse_word(input.chars().collect::<Vec<_>>().as_slice());
+            assert_eq!(result.result, vec![H, M, U, R, A]);
+            assert_eq!(result.consumed, 6);
         }
 
         #[test]
