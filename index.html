@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="pl">
+
+<head>
+    <meta charset="UTF-8">
+    <title>beciarz</title>
+    <meta charset="utf-8">
+    <meta name="color-scheme" content="light dark">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2.0.6/css/pico.min.css" />
+</head>
+
+<body>
+    <header class="container">
+        <h1>Tłumacz zapisów języka polskiego</h1>
+    </header>
+
+    <main class="container">
+
+        <div id="app-lat">
+            <label for="latin-input">oficjalna łacinka ➡️ greka</label><input type="text" id="latin-input"
+                placeholder="Litwo, ojczyzno moja! Ty jesteś jak zdrowie!">
+        </div>
+        <article>
+            <div id="latin-to-greek-res">
+            </div>
+        </article>
+        <div id="app-gr">
+            <label for="greek-input">greka ➡️ oficjalna łacinka</label><input type="text" id="greek-input"
+            placeholder="ποζδραβάμ τέπλύτκο!">
+        </div>
+        <article>
+            <div id="greek-to-latin-res">
+            </div>
+        </article>
+        <hr />
+        <div>
+            Nadchodzą:
+            <ul>
+                <li>cyrylica dla języka polskiego</li>
+                <li>alternatywna łacinka bez znaków diakretycznych</li>
+            </ul>
+        </div>
+    </main>
+    <footer class="container">
+        <small><a href="https://www.wojciechkarpiel.pl/">WK</a> • <a href="https://picocss.com">Pico</a></small>
+    </footer>
+
+
+
+    <script type="module">
+        import init, { js_official_to_greek } from "./pkg/beciarz.js";
+        init().then(() => {
+            (function () {
+                var input = document.getElementById("latin-input")
+                input.addEventListener('change', function () {
+                    document.getElementById("latin-to-greek-res").innerText = js_official_to_greek(input.value)
+                })
+            })();
+
+            (function () {
+                var input = document.getElementById("greek-input")
+                input.addEventListener('change', function () {
+                    document.getElementById("greek-to-latin-res").innerText = "jeszcze nie dostępne ¯\\_(ツ)_/¯"
+                })
+            })()
+        });
+    </script>
+
+</body>
+
+</html>
