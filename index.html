@@ -27,7 +27,7 @@
         </article>
         <div id="app-gr">
             <label for="greek-input">greka ➡️ oficjalna łacinka</label><input type="text" id="greek-input"
-            placeholder="ποζδραβάμ τέπλύτκο!">
+                placeholder="ποζδραβάμ τέπλύτκο!">
         </div>
         <article>
             <div id="greek-to-latin-res">
@@ -54,7 +54,14 @@
             (function () {
                 var input = document.getElementById("latin-input")
                 input.addEventListener('change', function () {
-                    document.getElementById("latin-to-greek-res").innerText = js_official_to_greek(input.value)
+                    var result;
+                    try {
+                        result = js_official_to_greek(input.value);
+                    } catch (e) {
+                        console.error(e);
+                        result = "coś się zepsuło, daj znać wojtuchowi co wpisałeś";
+                    }
+                    document.getElementById("latin-to-greek-res").innerText = result;
                 })
             })();
 
