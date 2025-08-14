@@ -20,6 +20,10 @@ mod test {
             text,
             "λίτβο, ο'θιζνο μοά! τι έστεσ' άκ ζδροβέ! ίλέ τή τρέμπα τσενίτ', τεν τιλ'κο σή δοβέ, κτο τή στρατίλ."
         );
+
+        assert_eq!("μέ'", super::official_to_greek("miej"));
+        assert_eq!("έ'", super::official_to_greek("jej"));
+        assert_eq!("δ\\άγνοστικα", super::official_to_greek("diagnostyka"));
     }
 }
 
@@ -268,6 +272,20 @@ mod greek {
         }
 
         // print!("FALLBACK TO NAIVE CONSUME: {:?}", i0);
+        // check for break
+        let i1 = input.get(1).unwrap().clone();
+        if i1 == J || i1 == I { //|| i1 == Nx || i1 == Zx || i1 == Sx || i1 == Tx  || i1 == Dx ||i1==Rx{
+            if i0 == N || i0 ==Z || i0 == S || i0 == T || i0==D || i0 ==R{
+                // println!("BREAKING: {:?}", i0);
+                let mut r0=consume_naive(i0);
+                r0.push(Greek::Break);
+                return ConsumeResult {
+                    result: r0,
+                    consumed: 1,
+                };
+            }
+        }
+
         return ConsumeResult {
             result: consume_naive(i0),
             consumed: 1,
