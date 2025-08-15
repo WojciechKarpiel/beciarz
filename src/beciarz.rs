@@ -39,6 +39,7 @@ mod test {
         assert_eq!("δ\\άγνοστικα", super::official_to_greek("diagnostyka"));
 
         assert_eq!(super::official_to_greek("kiedy"), "κέδι");
+        assert_eq!(super::official_to_greek("mięso"), "μήσο");
     }
 
     #[test]
@@ -54,6 +55,7 @@ mod test {
         assert_eq!(text, expected);
 
         assert_eq!(super::greek_to_official("Κέδι"), "kiedy");
+        assert_eq!(super::greek_to_official("μήσο"), "mięso");
     }
 }
 
@@ -1326,13 +1328,15 @@ mod official {
                 }
 
                 // wje ->wie
-                if (c0 == W || c0 == K) && i1 == J && input.len() > 2 {
+                if (c0 == W || c0 == K || c0 == M) && i1 == J && input.len() > 2 {
                     let i2 = input[2];
                     if i2 == A || i2 == Ox || i2 == E || i2 == Ex || i2 == O || i2 == U {
                         if c0 == W {
                             res.push('w');
                         } else if c0 == K {
                             res.push('k');
+                        } else if c0 == M {
+                            res.push('m');
                         } else {
                             panic!("Unexpected sound: {:?}", c0);
                         }
