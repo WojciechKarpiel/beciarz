@@ -10,6 +10,19 @@ pub fn official_to_greek(input: &str) -> String {
         .join("")
 }
 
+pub fn greek_to_official(input: &str) -> String {
+    let text = greek::utf8_greek_to_text(input);
+
+        text.parts
+        .iter()
+        .map(|part| match part {
+            official::TextRepr::Word(sounds) => official::to_official_utf8(sounds),
+            official::TextRepr::Arbitrary(text) => text.clone(), // todo noclone
+        })
+        .collect::<Vec<_>>()
+        .join("")
+}
+
 mod test {
 
     #[test]
@@ -111,7 +124,7 @@ mod greek {
 
     use super::Sound;
 
-    pub fn do_the_job(input: &[Sound]) -> Vec<Greek> {
+    fn do_the_job(input: &[Sound]) -> Vec<Greek> {
         let mut result = vec![];
         let mut i = 0;
 
@@ -327,7 +340,31 @@ mod greek {
         Omega,
         OmegaAcute,
         Acute,
-        Break, // TODO wsparcie później
+        Break,
+    }
+
+    impl Greek {
+        fn is_softening(self) -> bool {
+            match self {
+                Greek::Acute
+                | Greek::AlphaAcute
+                | Greek::EpsilonAcute
+                | Greek::EtaAcute
+                | Greek::IotaAcute
+                | Greek::OmicronAcute
+                | Greek::UpsilonAcute
+                | Greek::OmegaAcute => true,
+                _ => false,
+            }
+        }
+
+        fn can_be_softened(self) -> bool {
+            use Greek::*;
+            match self {
+                Rho | Nu | Zeta | Sigma | Delta | Tau| Lambda => true,
+                _ => false,
+            }
+        }
     }
 
     fn to_char(greek: Greek) -> char {
@@ -368,9 +405,340 @@ mod greek {
         }
     }
 
+    fn char_to_greek(c: char) -> Option<Greek> {
+        match c {
+            'α' => Some(Greek::Alpha),
+            'β' => Some(Greek::Beta),
+            'γ' => Some(Greek::Gamma),
+            'δ' => Some(Greek::Delta),
+            'ε' => Some(Greek::Epsilon),
+            'ζ' => Some(Greek::Zeta),
+            'η' => Some(Greek::Eta),
+            'ή' => Some(Greek::EtaAcute),
+            'θ' => Some(Greek::Theta),
+            'ι' => Some(Greek::Iota),
+            'κ' => Some(Greek::Kappa),
+            'λ' => Some(Greek::Lambda),
+            'μ' => Some(Greek::Mu),
+            'ν' => Some(Greek::Nu),
+            'ξ' => Some(Greek::Xi),
+            'ο' => Some(Greek::Omicron),
+            'π' => Some(Greek::Pi),
+            'ρ' => Some(Greek::Rho),
+            'σ' => Some(Greek::Sigma),
+            'τ' => Some(Greek::Tau),
+            'υ' => Some(Greek::Upsilon),
+            'φ' => Some(Greek::Phi),
+            'χ' => Some(Greek::Chi),
+            'ψ' => Some(Greek::Psi),
+            'ω' => Some(Greek::Omega),
+            'ά' => Some(Greek::AlphaAcute),
+            'έ' => Some(Greek::EpsilonAcute),
+            'ί' => Some(Greek::IotaAcute),
+            'ό' => Some(Greek::OmicronAcute),
+            'ύ' => Some(Greek::UpsilonAcute),
+            'ώ' => Some(Greek::OmegaAcute),
+            '\'' => Some(Greek::Acute),
+            '\\' => Some(Greek::Break),
+            _ => None,
+        }
+    }
+
+    fn naive_greek_to_sound(g: Greek) -> Vec<Sound> {
+        match g {
+            Greek::Alpha => vec![Sound::A],
+            Greek::Beta => vec![Sound::W],
+            Greek::Gamma => vec![Sound::G],
+            Greek::Delta => vec![Sound::D],
+            Greek::Epsilon => vec![Sound::E],
+            Greek::Zeta => vec![Sound::Z],
+            Greek::Eta => vec![Sound::Ex],
+            Greek::Theta => vec![Sound::Ch],
+            Greek::Iota => vec![Sound::Y],
+            Greek::Kappa => vec![Sound::K],
+            Greek::Lambda => vec![Sound::Lx],
+            Greek::Mu => vec![Sound::M],
+            Greek::Nu => vec![Sound::N],
+            Greek::Xi => vec![Sound::H],
+            Greek::Omicron => vec![Sound::O],
+            Greek::Pi => vec![Sound::P],
+            Greek::Rho => vec![Sound::R],
+            Greek::Sigma => vec![Sound::S],
+            Greek::Tau => vec![Sound::T],
+            Greek::Upsilon => vec![Sound::U],
+            Greek::Phi => vec![Sound::F],
+            Greek::Chi => vec![Sound::H],
+            Greek::Psi => vec![Sound::Sh],
+            Greek::Omega => vec![Sound::Ox],
+            Greek::AlphaAcute => vec![Sound::J, Sound::A],
+            Greek::EpsilonAcute => vec![Sound::J, Sound::E],
+            Greek::IotaAcute => vec![Sound::I],
+            Greek::OmicronAcute => vec![Sound::J,Sound::O],
+            Greek::UpsilonAcute => vec![Sound::J,Sound::U],
+            Greek::OmegaAcute => vec![Sound::J,Sound::Ox],
+            Greek::Acute => vec![Sound::J],
+            Greek::Break => vec![],
+            Greek::EtaAcute => vec![Sound::J, Sound::Ex]
+        }
+    }
+
+    struct ParseGrResult {
+        result: Vec<Greek>,
+        consumed: usize,
+    }
+
+    #[derive(Debug,PartialEq, Eq)]
+    struct ParseOfResult {
+    result: Vec<Sound>,
+    consumed: usize,
+    }
+
+    // impl ParseGrResult {
+    //     fn is_empty(&self) -> bool {
+    //         self.consumed == 0
+    //     }
+    // }
+
+    fn greek_vec_to_sound(input_initial: &[Greek]) ->ParseOfResult {
+        let mut result = vec![];
+        use Greek::*;
+        use Sound::*;
+        let mut i = 0;
+        while i < input_initial.len() {
+            let input = &input_initial[i..];
+            let c0 = input[0];
+
+
+            if c0 == Break{
+                i+=1;
+                continue;
+            }
+
+            if c0.can_be_softened() && input.len() > 1 && input[1].is_softening() {
+                let q1 = match c0 {
+                    Rho => Rx,
+                    Nu => Nx,
+                    Zeta => Zx,
+                    Sigma => Sx,
+                    Delta => Dx,
+                    Tau => Tx,
+                    Lambda => L,
+                    _ => panic!("nie zmiękczalny :(")
+                };
+                result.push(q1);
+                i += 1;
+
+                if input[1] == Acute {
+                    // not in result
+                    i += 1
+                } else {
+                    let c = match input[1] {
+                        Greek::AlphaAcute => A,
+                        Greek::EpsilonAcute => E,
+                        Greek::EtaAcute => Ex,
+                        Greek::IotaAcute => if c0 == Rho { Y } else { I }, // na pewno
+                        Greek::OmicronAcute => O,
+                        Greek::UpsilonAcute => U,
+                        Greek::OmegaAcute => Ox,
+                        _ => panic!("no soft :("),
+                    };
+                    result.push(c);
+                    i += 1;
+                }
+
+                continue;
+            }
+
+            ///// DWUZNAKI
+            if input.len()>1 {
+                let c1 = input[1];
+                if c0 == Tau && c1 == Sigma{
+                    i+=2;
+                    result.push(C);
+                    continue;
+                }
+                if c0 == Delta && c1 == Zeta {
+                    i+=2;
+                    result.push(Dz);
+                    continue;
+                }
+                if c0==Delta && c1==Xi{
+                    i+=2;
+                    result.push(Dh);
+                    continue;
+                }
+                if c0 == Mu && c1 == Pi{
+                    i+=2;
+                    result.push(B);
+                    continue;
+                }
+
+            }
+            // EODWUZNAKI
+
+
+
+            let mut snd = naive_greek_to_sound(c0);
+            result.append(&mut snd);
+            i+=1
+        }
+
+        ParseOfResult{result, consumed: i}
+    }
+
+    #[derive(PartialEq, Eq, Debug)]
+    pub enum TextRepr {
+        Arbitrary(String),
+        Word(Vec<Greek>),
+    }
+
+    #[derive(PartialEq, Eq, Debug)]
+    pub struct GreekText {
+        pub parts: Vec<TextRepr>,
+    }
+
+   pub fn utf8_greek_to_text(input: &str) -> super::official::Text {
+        let greek_text = utf8_to_greek(input);
+        let prepared=greek_text.parts.iter().map(|part| 
+        match part{
+            TextRepr::Arbitrary(arbitrary) => super::official::TextRepr::Arbitrary(arbitrary.clone()),
+            TextRepr::Word(word) => {
+                let parse_result=greek_vec_to_sound(word);
+                // TODO ignore count - sanity check
+                if parse_result.consumed != word.len(){
+                    panic!("Not all parsed")
+                }
+                super::official::TextRepr::Word(parse_result.result)
+        }
+    }).collect::<Vec<super::official::TextRepr>>();
+
+    super::official::Text{parts: prepared}
+    }
+
+    fn utf8_to_greek(input: &str) -> GreekText {
+        let chars_input: Vec<char> = input.to_lowercase().chars().collect();
+
+        let mut parts = vec![];
+        let mut i = 0;
+
+        while i < chars_input.len() {
+            let chars = &chars_input[i..];
+            if chars.is_empty() {
+                break;
+            }
+
+            let cr = consume_utf8_word(chars);
+            if cr.consumed > 0 {
+                parts.push(TextRepr::Word(cr.result));
+                i += cr.consumed;
+                continue;
+            }
+
+            let mut j = 0;
+            while j < chars.len() && char_to_greek(chars[j]) == None {
+                // println!("Skipping char: {}", charsi[i]);
+                j += 1;
+            }
+
+            if j > 0 {
+                // println!("Adding arbitrary chars: {}", &chars[..j]);
+                parts.push(TextRepr::Arbitrary(chars[..j].iter().collect()));
+                i += j;
+                continue;
+            }
+
+            print!("Failed to parse at index {}: '{}'", i, chars[0]);
+            break;
+        }
+
+        GreekText { parts }
+    }
+
+    fn consume_utf8_word(input: &[char]) -> ParseGrResult {
+        let mut i = 0;
+        let mut result = Vec::new();
+        while i < input.len() {
+            match char_to_greek(input[i]) {
+                Some(g) => {
+                    result.push(g);
+                    i += 1;
+                }
+                None => break,
+            }
+        }
+        ParseGrResult {
+            result,
+            consumed: i,
+        }
+    }
+
     #[cfg(test)]
     mod tests {
         use super::*;
+
+        #[test]
+        fn gr_vec_to_sound_vec(){
+            use Greek::*;
+            use Sound::*;
+            let r=greek_vec_to_sound(&vec![Delta,Omicron,Mu,Pi,Rho,Omicron]);
+            assert_eq!(r, ParseOfResult{result: vec![D,O,B,R,O], consumed: 6});
+
+
+            let r=greek_vec_to_sound(&vec![Delta,AlphaAcute,Mu,Acute,Rho,IotaAcute,Nu, IotaAcute]);
+            assert_eq!(r, ParseOfResult{result: vec![Dx,A,M,J,Rx,Y,Nx,I], consumed: 8});
+
+
+            let r=greek_vec_to_sound(&vec![Mu,Alpha,Tau,Sigma,Kappa,IotaAcute]);
+            assert_eq!(r, ParseOfResult{result: vec![M,A,C,K,I], consumed: 6});
+        
+            let q = vec![
+                    Greek::Tau,
+                    Greek::EpsilonAcute,
+                    Greek::Pi,
+                    Greek::Lambda,
+                    Greek::UpsilonAcute,
+                    Greek::Tau,
+                    Greek::Kappa,
+                    Greek::Omicron
+                ];
+                    let r=greek_vec_to_sound(&q);
+            assert_eq!(r, ParseOfResult{result: vec![Tx,E,P,L,U,T,K,O], consumed: 8});
+        }
+
+        #[test]
+        fn utf8_do_gr() {
+            let res = utf8_to_greek("ποζδραβάμ τέπλύτκο! :)");
+            assert_eq!(res.parts.len(), 4);
+            assert_eq!(
+                res.parts[0],
+                TextRepr::Word(vec![
+                    Greek::Pi,
+                    Greek::Omicron,
+                    Greek::Zeta,
+                    Greek::Delta,
+                    Greek::Rho,
+                    Greek::Alpha,
+                    Greek::Beta,
+                    Greek::AlphaAcute,
+                    Greek::Mu
+                ])
+            );
+            assert_eq!(res.parts[1], TextRepr::Arbitrary(" ".into()));
+            assert_eq!(
+                res.parts[2],
+                TextRepr::Word(vec![
+                    Greek::Tau,
+                    Greek::EpsilonAcute,
+                    Greek::Pi,
+                    Greek::Lambda,
+                    Greek::UpsilonAcute,
+                    Greek::Tau,
+                    Greek::Kappa,
+                    Greek::Omicron
+                ])
+            );
+            assert_eq!(res.parts[3], TextRepr::Arbitrary("! :)".into()));
+        }
 
         #[test]
         fn test_to_greek() {
@@ -439,6 +807,52 @@ mod greek {
 mod official {
     use super::Sound;
     use super::Sound::*;
+
+
+    fn naive_to_string(s: Sound)-> &'static str {
+        use Sound::*;
+        let qq=match s {
+            A => "a",
+            B => "b",
+            C => "c",
+            D => "d",
+            E => "e",
+            F => "f",
+            G => "g",
+            H => "ch", // bo częstsze
+            I => "i",
+            J => "j",
+            K => "k",
+            L => "l",
+            Lx => "ł",
+            M => "m",
+            N => "n",
+            Nx => "ń",
+            O => "o",
+            Ox => "ą",
+            P => "p",
+            R => "r",
+            Rx => "rz",
+            S => "s",
+            Sx => "ś",
+            Sh => "sz",
+            T => "t",
+            Tx => "ć",
+            U => "u",
+            W => "w",
+            Y => "y",
+            Z => "z",
+            Zx => "ź",
+            Zh => "ż",
+            Ch => "cz",
+            Dz => "dz",
+            Dx => "dź",
+            Dh => "dż",
+            Ex => "ę",
+        };
+
+        qq
+    }
 
     pub fn parse(input_: &str) -> Text {
         let input = input_.to_lowercase(); // TODO handle uppercase
@@ -820,9 +1234,46 @@ mod official {
         }
     }
 
+
+        pub fn to_official_utf8(input_initial: &[Sound]) -> String{
+        let mut res: String = String::new();
+        let mut i=0;
+
+        while i < input_initial.len() {
+            let input = &input_initial[i..];
+            let c0 = input[0];
+
+            // TODO handle all cases
+            
+
+            res.push_str(naive_to_string(c0));
+            i+=1;
+        }
+
+        res
+    }
+
     #[cfg(test)]
     mod tests {
         use super::*;
+
+        #[test]
+        fn snd_to_string(){
+            use Sound::*;
+            let input = vec![K,O,P,Y,T,K,O];
+            assert_eq!(to_official_utf8(&input), "kopytko");
+            let input = vec![Ch,A,H,A];
+            assert_eq!(to_official_utf8(&input), "czacha"); // TODO jak ogarnąć "CH?"
+            let input = vec![L,I,T,W,O];
+            assert_eq!(to_official_utf8(&input), "litwo"); 
+            let input = vec![Tx,E,P,L,U,T,K,O];
+            assert_eq!(to_official_utf8(&input), "cieplutko"); 
+            let input = vec![Z,D,R,O,W,J,E];
+            assert_eq!(to_official_utf8(&input), "zdrowie"); 
+
+
+            
+        }
 
         #[test]
         fn wejście() {
@@ -870,17 +1321,14 @@ mod official {
             assert_eq!(result.result, vec![H, M, U, R, A]);
             assert_eq!(result.consumed, 6);
 
-
-
             let input = "dzw";
             let result = parse_word(input.chars().collect::<Vec<_>>().as_slice());
             assert_eq!(result.result, vec![Dz, W]);
             assert_eq!(result.consumed, 3);
 
-
             let input = "dzwo";
             let result = parse_word(input.chars().collect::<Vec<_>>().as_slice());
-            assert_eq!(result.result, vec![Dz,W,O]);
+            assert_eq!(result.result, vec![Dz, W, O]);
             assert_eq!(result.consumed, 4);
         }
 

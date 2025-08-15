@@ -26,7 +26,7 @@
             </div>
         </article>
         <div id="app-gr">
-            <label for="greek-input">greka ➡️ oficjalna łacinka</label><input type="text" id="greek-input"
+            <label for="greek-input">[NIEDOROBIONE] greka ➡️ oficjalna łacinka</label><input type="text" id="greek-input"
                 placeholder="ποζδραβάμ τέπλύτκο!">
         </div>
         <article>
@@ -49,7 +49,7 @@
 
 
     <script type="module">
-        import init, { js_official_to_greek } from "./pkg/beciarz.js";
+        import init, { js_official_to_greek, js_greek_to_official } from "./pkg/beciarz.js";
         init().then(() => {
             (function () {
                 var input = document.getElementById("latin-input")
@@ -68,7 +68,14 @@
             (function () {
                 var input = document.getElementById("greek-input")
                 input.addEventListener('input', function () {
-                    document.getElementById("greek-to-latin-res").innerText = "jeszcze nie dostępne ¯\\_(ツ)_/¯"
+                             var result;
+                    try {
+                        result = js_greek_to_official(input.value);
+                    } catch (e) {
+                        console.error(e);
+                        result = "coś się zepsuło, daj znać wojtuchowi co wpisałeś";
+                    }
+                    document.getElementById("greek-to-latin-res").innerText = result;
                 })
             })()
         });
