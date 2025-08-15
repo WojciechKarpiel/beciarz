@@ -37,6 +37,8 @@ mod test {
         assert_eq!("μέ'", super::official_to_greek("miej"));
         assert_eq!("έ'", super::official_to_greek("jej"));
         assert_eq!("δ\\άγνοστικα", super::official_to_greek("diagnostyka"));
+
+        assert_eq!(super::official_to_greek("kiedy"), "κέδι");
     }
 
     #[test]
@@ -50,6 +52,8 @@ mod test {
         let expected = "pozdrawiam cieplutko!";
         let text = super::greek_to_official(input);
         assert_eq!(text, expected);
+
+        assert_eq!(super::greek_to_official("Κέδι"), "kiedy");
     }
 }
 
@@ -1322,11 +1326,17 @@ mod official {
                 }
 
                 // wje ->wie
-                if c0 == W && i1 == J && input.len() > 2 {
+                if (c0 == W || c0 == K) && i1 == J && input.len() > 2 {
                     let i2 = input[2];
                     if i2 == A || i2 == Ox || i2 == E || i2 == Ex || i2 == O || i2 == U {
-                        res.push('w');
-                        i += 1; // consume W
+                        if c0 == W {
+                            res.push('w');
+                        } else if c0 == K {
+                            res.push('k');
+                        } else {
+                            panic!("Unexpected sound: {:?}", c0);
+                        }
+                        i += 1; // consume W/K
                         res.push('i');
                         i += 1; //consuje J
                         continue; // handle the rest separately
