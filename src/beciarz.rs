@@ -751,7 +751,7 @@ mod official {
                 } else {
                     ConsumeResult {
                         result: vec![],
-                        consumed: 2,
+                        consumed: 0,
                     }
                 }
             }
@@ -869,6 +869,19 @@ mod official {
             let result = parse_word(input.chars().collect::<Vec<_>>().as_slice());
             assert_eq!(result.result, vec![H, M, U, R, A]);
             assert_eq!(result.consumed, 6);
+
+
+
+            let input = "dzw";
+            let result = parse_word(input.chars().collect::<Vec<_>>().as_slice());
+            assert_eq!(result.result, vec![Dz, W]);
+            assert_eq!(result.consumed, 3);
+
+
+            let input = "dzwo";
+            let result = parse_word(input.chars().collect::<Vec<_>>().as_slice());
+            assert_eq!(result.result, vec![Dz,W,O]);
+            assert_eq!(result.consumed, 4);
         }
 
         #[test]
