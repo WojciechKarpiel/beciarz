@@ -29,9 +29,7 @@ pub fn greek_to_official(input: &str) -> String {
 mod test {
     #[test]
     fn official_greek_both_ways() {
-        let official = "magia";
-        let greek = "μαγά";
-        assert_both_ways(official, greek);
+        assert_both_ways("magia", "μαγά");
         assert_both_ways("radość", "ραδοστ'");
         assert_both_ways(
             "ania siadła przy kominku, a jerzy jeździł na koniu (koniku)",
@@ -45,13 +43,28 @@ mod test {
             "τυκανι μαώ σ'μέψνε δόμπι, α βατσεκ μα σκλέπ ζ μασλεμ",
         );
 
-        assert_both_ways("na radarze widać już dyskotekową planetę, kapitanie", "να ραδαρέ βίδατ' ύξ δισκοτεκοβω πλάνετη, καπίτανέ");
+        assert_both_ways(
+            "na radarze widać już dyskotekową planetę, kapitanie",
+            "να ραδαρέ βίδατ' ύξ δισκοτεκοβω πλάνετη, καπίτανέ",
+        );
+
+        assert_both_ways(
+            "no w końcu, pora się nałebać",
+            "νο β κον'τσυ, πορα σή ναλεμπατ'",
+        );
+        assert_both_ways(
+            "oj przestań się mazać, przyjechaliśmy się tu dobrze bawić.",
+            "ο' πρέσταν' σή μαζατ', πρίέχαλίσ'μι σή τυ δομπρέ μπαβίτ'.",
+        );
         // UWAGA ó->u
-        assert_both_ways("gdzie są dziewczęta, gdzie jest kurczę wudka, co to jest za muzyka, gdzie jest dubstep", 
-    "γδέ σω δέβθητα, γδέ έστ κυρθη βυδκα, τσο το έστ ζα μυζικα, γδέ έστ δυμπστεπ");
+        assert_both_ways(
+            "gdzie są dziewczęta, gdzie jest kurczę wudka, co to jest za muzyka, gdzie jest dubstep",
+            "γδέ σω δέβθητα, γδέ έστ κυρθη βυδκα, τσο το έστ ζα μυζικα, γδέ έστ δυμπστεπ",
+        );
         //KNIEC uwagi
     }
 
+    #[allow(dead_code)]
     fn assert_both_ways(official: &str, greek: &str) {
         assert_eq!(super::official_to_greek(official), greek);
         assert_eq!(super::greek_to_official(greek), official);

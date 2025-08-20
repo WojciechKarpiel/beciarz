@@ -409,6 +409,7 @@ fn single_naive(c: char) -> Option<Sound> {
         'ł' => Some(Lx),
         'm' => Some(M),
         'n' => Some(N),
+        'ń' => Some(Nx),
         'o' => Some(O),
         'ó' => Some(U), // TODO wsparcie dla ou
         'p' => Some(P),
