@@ -28,9 +28,31 @@ pub fn greek_to_official(input: &str) -> String {
 
 mod test {
     #[test]
-    fn official_greek_both_ways(){
+    fn official_greek_both_ways() {
         let official = "magia";
         let greek = "μαγά";
+        assert_both_ways(official, greek);
+        assert_both_ways("radość", "ραδοστ'");
+        assert_both_ways(
+            "ania siadła przy kominku, a jerzy jeździł na koniu (koniku)",
+            "ανά σάδλα πρί κομίνκυ, α έρί έζδίλ να κονύ (κονίκυ)",
+        );
+        assert_both_ways("nie, ni ma", "νέ, νί μα");
+        assert_both_ways("przyjdzie kryska na matyska", "πρί'δέ κρισκα να ματισκα");
+        // czy "m" powinno przekazywać zmiękczenie, tzn σμέψνι czy σ'μέψνι?
+        assert_both_ways(
+            "tukany mają śmieszne dzioby, a wacek ma sklep z masłem",
+            "τυκανι μαώ σ'μέψνε δόμπι, α βατσεκ μα σκλέπ ζ μασλεμ",
+        );
+
+        assert_both_ways("na radarze widać już dyskotekową planetę, kapitanie", "να ραδαρέ βίδατ' ύξ δισκοτεκοβω πλάνετη, καπίτανέ");
+        // UWAGA ó->u
+        assert_both_ways("gdzie są dziewczęta, gdzie jest kurczę wudka, co to jest za muzyka, gdzie jest dubstep", 
+    "γδέ σω δέβθητα, γδέ έστ κυρθη βυδκα, τσο το έστ ζα μυζικα, γδέ έστ δυμπστεπ");
+        //KNIEC uwagi
+    }
+
+    fn assert_both_ways(official: &str, greek: &str) {
         assert_eq!(super::official_to_greek(official), greek);
         assert_eq!(super::greek_to_official(greek), official);
     }

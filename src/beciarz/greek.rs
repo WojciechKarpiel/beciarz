@@ -110,6 +110,7 @@ fn consume_greek(input: &[Sound]) -> ConsumeResult {
     }
 
     let i0 = input[0];
+
     if input.len() == 1 {
         return ConsumeResult {
             result: consume_naive(i0).to_vec(),
@@ -131,6 +132,7 @@ fn consume_greek(input: &[Sound]) -> ConsumeResult {
         let total_consumed = softened_count + following_vowel.map_or(0, |_| 1);
 
         let last_greek: Greek = match following_vowel {
+            Some(Y) => Greek::IotaAcute, // SPECIAL CASE FOR "RZY", TODO MAKE SURE "RZ" IS PRESENT
             Some(vowel) => soften_vowel(vowel), // todo what if not-softened
             None => Greek::Acute,
         };
@@ -340,7 +342,7 @@ fn naive_greek_to_sound(g: Greek) -> &'static [Sound] {
         Greek::Lambda => &[Sound::Lx],
         Greek::Mu => &[Sound::M],
         Greek::Nu => &[Sound::N],
-        Greek::Xi => &[Sound::H],
+        Greek::Xi => &[Sound::Zh],
         Greek::Omicron => &[Sound::O],
         Greek::Pi => &[Sound::P],
         Greek::Rho => &[Sound::R],
@@ -394,25 +396,38 @@ fn greek_vec_to_sound(input_initial: &[Greek]) -> ParseOfResult {
             continue;
         }
 
-        if c0.can_be_softened() && input.len() > 1 && input[1].is_softening() {
-            let q1 = match c0 {
-                Rho => Rx,
-                Nu => Nx,
-                Zeta => Zx,
-                Sigma => Sx,
-                Delta => Dx,
-                Tau => Tx,
-                Lambda => L,
-                _ => panic!("nie zmiękczalny :("),
-            };
-            result.push(q1);
-            i += 1;
+        let mut softened_count = 0;
+        while softened_count < input.len() && input[softened_count].can_be_softened() {
+            if softened_count > 0 && input[softened_count] == Rho {
+                break;
+            }
+            softened_count += 1;
+        }
 
-            if input[1] == Acute {
+        if softened_count > 0
+            && input.len() > softened_count
+            && input[softened_count].is_softening()
+        {
+            for j in 0..softened_count {
+                let q = match input[j] {
+                    Rho => Rx,
+                    Nu => Nx,
+                    Zeta => Zx,
+                    Sigma => Sx,
+                    Delta => Dx,
+                    Tau => Tx,
+                    Lambda => L,
+                    _ => panic!("nie zmiękczalny :("),
+                };
+                result.push(q);
+                i += 1;
+            }
+
+            if input[softened_count] == Acute {
                 // not in result
                 i += 1
             } else {
-                let c = match input[1] {
+                let c = match input[softened_count] {
                     Greek::AlphaAcute => A,
                     Greek::EpsilonAcute => E,
                     Greek::EtaAcute => Ex,
@@ -618,6 +633,24 @@ mod tests {
                 consumed: 8
             }
         );
+
+        let q = vec![
+            Greek::Rho,
+            Greek::Alpha,
+            Greek::Delta,
+            Greek::Omicron,
+            Greek::Sigma,
+            Greek::Tau,
+            Greek::Acute,
+        ];
+        let r = greek_vec_to_sound(&q);
+        assert_eq!(
+            r,
+            ParseOfResult {
+                result: vec![R, A, D, O, Sx, Tx],
+                consumed: 7
+            }
+        );
     }
 
     #[test]
@@ -653,6 +686,21 @@ mod tests {
             ])
         );
         assert_eq!(res.parts[3], TextRepr::Arbitrary("! :)".into()));
+
+        let res = utf8_to_greek("ραδοστ'");
+        assert_eq!(res.parts.len(), 1);
+        assert_eq!(
+            res.parts[0],
+            TextRepr::Word(vec![
+                Greek::Rho,
+                Greek::Alpha,
+                Greek::Delta,
+                Greek::Omicron,
+                Greek::Sigma,
+                Greek::Tau,
+                Greek::Acute,
+            ])
+        );
     }
 
     #[test]
