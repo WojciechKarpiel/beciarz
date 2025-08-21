@@ -62,6 +62,14 @@ mod test {
             "γδέ σω δέβθητα, γδέ έστ κυρθη βυδκα, τσο το έστ ζα μυζικα, γδέ έστ δυμπστεπ",
         );
         //KNIEC uwagi
+
+
+        assert_both_ways("bardziej", "μπαρδέ'");
+
+        //ó->u
+        assert_both_ways(
+            "myślę, że nikt nie miał do czynienia z bardziej pożytecznymi przeciwnościami, o ile tylko postanowisz wykorzystać je w dobry sposub.",
+             "μισλή, ξε νίκτ νέ μάλ δο θινένά ζ μπαρδέ' ποξιτεθνιμί πρέτίβνοστάμί, ο ίλέ τιλ'κο ποστανοβίψ βικορίστατ' έ β δομπρι σποσυμπ.");
     }
 
     #[allow(dead_code)]

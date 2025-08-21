@@ -13,10 +13,6 @@ fn do_the_job(input: &[Sound]) -> Vec<Greek> {
         let consume_result = consume_greek(&input[i..]);
         result.extend(consume_result.result);
         i += consume_result.consumed;
-        // println!(
-        //     "Consumed {} sounds, result so far: {:?}",
-        //     consume_result.consumed, result
-        // );
     }
 
     result
@@ -127,7 +123,6 @@ fn consume_greek(input: &[Sound]) -> ConsumeResult {
     }
 
     if softened_count > 0 {
-        // println!("Softened count: {}", softened_count);
         let following_vowel = input.get(softened_count).cloned().filter(|x| x.is_vowel());
         let total_consumed = softened_count + following_vowel.map_or(0, |_| 1);
 
@@ -167,13 +162,11 @@ fn consume_greek(input: &[Sound]) -> ConsumeResult {
         }
     }
 
-    // print!("FALLBACK TO NAIVE CONSUME: {:?}", i0);
     // check for break
     let i1 = input.get(1).unwrap().clone();
     if i1 == J || i1 == I {
         //|| i1 == Nx || i1 == Zx || i1 == Sx || i1 == Tx  || i1 == Dx ||i1==Rx{
         if i0 == N || i0 == Z || i0 == S || i0 == T || i0 == D || i0 == R {
-            // println!("BREAKING: {:?}", i0);
             let mut r0 = consume_naive(i0).to_vec();
             r0.push(Greek::Break);
             return ConsumeResult {
@@ -397,8 +390,20 @@ fn greek_vec_to_sound(input_initial: &[Greek]) -> ParseOfResult {
         }
 
         let mut softened_count = 0;
-        while softened_count < input.len() && input[softened_count].can_be_softened() {
-            if softened_count > 0 && input[softened_count] == Rho {
+        let mut was_rho = false;
+        while softened_count < input.len() {
+            let isc = input[softened_count];
+            if !isc.can_be_softened() {
+                break;
+            }
+            if isc != Rho && was_rho {
+                softened_count = 0; // no softening for you
+                break;
+            }
+            if isc == Rho {
+                was_rho = true;
+            }
+            if softened_count > 0 && was_rho {
                 break;
             }
             softened_count += 1;
@@ -542,12 +547,10 @@ fn utf8_to_greek(input: &str) -> GreekText {
 
         let mut j = 0;
         while j < chars.len() && char_to_greek(chars[j]) == None {
-            // println!("Skipping char: {}", charsi[i]);
             j += 1;
         }
 
         if j > 0 {
-            // println!("Adding arbitrary chars: {}", &chars[..j]);
             parts.push(TextRepr::Arbitrary(chars[..j].iter().collect()));
             i += j;
             continue;
@@ -648,6 +651,24 @@ mod tests {
             r,
             ParseOfResult {
                 result: vec![R, A, D, O, Sx, Tx],
+                consumed: 7
+            }
+        );
+
+        let q = vec![
+            Greek::Mu,
+            Greek::Pi,
+            Greek::Alpha,
+            Greek::Rho,
+            Greek::Delta,
+            Greek::EpsilonAcute,
+            Greek::Acute,
+        ];
+        let r = greek_vec_to_sound(&q);
+        assert_eq!(
+            r,
+            ParseOfResult {
+                result: vec![B, A, R, Dx, E, J],
                 consumed: 7
             }
         );
