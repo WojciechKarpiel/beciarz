@@ -445,7 +445,7 @@ pub fn to_official_utf8(input_initial: &[Sound]) -> String {
             if (c0.is_softened())
                 && c0 != I
                 && c0 != L
-                && (i1 == A || i1 == Ox || i1 == E || i1 == Ex || i1 == O || i1 == Ou || i1 == U || i1 == I)
+                && (i1.is_vowel() && i1 != Y)
             {
                 // if c0 != Rx {
                 match c0 {
@@ -469,7 +469,7 @@ pub fn to_official_utf8(input_initial: &[Sound]) -> String {
             // wje ->wie
             if (c0 == W || c0 == K || c0 == M || c0 == G) && i1 == J && input.len() > 2 {
                 let i2 = input[2];
-                if i2 == A || i2 == Ox || i2 == E || i2 == Ex || i2 == O  || i2 == Ou|| i2 == U {
+                if i2.is_vowel() && i2 != Y && i2 != I {
                     if c0 == W {
                         res.push('w');
                     } else if c0 == K {

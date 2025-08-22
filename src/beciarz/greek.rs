@@ -150,7 +150,7 @@ fn consume_greek(input: &[Sound]) -> ConsumeResult {
     use Sound::*;
     if i0 == Sound::J {
         let i1 = input.get(1).unwrap().clone();
-        if i1 == E || i1 == A || i1 == Ex || i1 == Ox || i1 == U || i1 == Ou || i1 == O {
+        if i1.is_vowel() && i1 != Y && i1 != I {
             return ConsumeResult {
                 result: soften_vowel(i1).to_vec(),
                 consumed: 2,
