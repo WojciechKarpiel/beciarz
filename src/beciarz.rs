@@ -6,7 +6,10 @@ pub fn official_to_greek(input: &str) -> String {
     text.parts
         .iter()
         .map(|part| match part {
-            official::TextRepr::Word(sounds) => greek::to_greek(sounds),
+            official::TextRepr::Word(sounds, orig) => {
+                let res = greek::to_greek(sounds);
+                handle_capitalisation(orig, res)
+            }
             official::TextRepr::Arbitrary(text) => text.clone(), // todo noclone
         })
         .collect::<Vec<_>>()
@@ -19,14 +22,47 @@ pub fn greek_to_official(input: &str) -> String {
     text.parts
         .iter()
         .map(|part| match part {
-            official::TextRepr::Word(sounds) => official::to_official_utf8(sounds),
+            official::TextRepr::Word(sounds, orig) => {
+                let res = official::to_official_utf8(sounds);
+                handle_capitalisation(orig, res)
+            }
             official::TextRepr::Arbitrary(text) => text.clone(), // todo noclone
         })
         .collect::<Vec<_>>()
         .join("")
 }
 
+fn handle_capitalisation(input: &str, output: String) -> String {
+    if input.is_empty() {
+        return output;
+    }
+
+    if input.chars().all(|c| c.is_uppercase()) {
+        return output.to_uppercase();
+    }
+
+    let mut it = input.chars();
+    let fst = it.next().unwrap();
+    if fst.is_uppercase() {
+        let mut c = output.chars();
+       return match c.next() {
+            None => String::new(),
+            Some(f) => f.to_uppercase().chain(c).collect(),
+        }
+    }
+
+    return output;
+}
+
 mod test {
+    #[test]
+    fn capitalisation() {
+        assert_both_ways(
+            "Litwo ziomek co tam MORDO elo",
+            "Λίτβο ζόμεκ τσο ταμ ΜΟΡΔΟ ελό",
+        );
+    }
+
     #[test]
     fn official_greek_both_ways() {
         assert_both_ways("magia", "μαγά");
@@ -86,7 +122,7 @@ mod test {
         let text = super::official_to_greek(input);
         assert_eq!(
             text,
-            "λίτβο, ο'θιζνο μοά! τι έστεσ' άκ ζδροβέ! ίλέ τή τρέμπα τσενίτ', τεν τιλ'κο σή δοβέ, κτο τή στρατίλ."
+            "Λίτβο, ο'θιζνο μοά! Τι έστεσ' άκ ζδροβέ! Ίλέ τή τρέμπα τσενίτ', τεν τιλ'κο σή δοβέ, κτο τή στρατίλ."
         );
 
         assert_eq!("μέ'", super::official_to_greek("miej"));
@@ -109,7 +145,7 @@ mod test {
         let text = super::greek_to_official(input);
         assert_eq!(text, expected);
 
-        assert_eq!(super::greek_to_official("Κέδι"), "kiedy");
+        assert_eq!(super::greek_to_official("Κέδι"), "Kiedy");
         assert_eq!(super::greek_to_official("μήσο"), "mięso");
     }
 }

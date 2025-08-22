@@ -48,6 +48,7 @@ fn naive_to_string(s: Sound) -> &'static str {
 }
 
 pub fn parse(input_: &str) -> Text {
+    let case_preserving_input = input_.chars().collect::<Vec<char>>();
     let input = input_.to_lowercase(); // TODO handle uppercase
 
     let mut parts = vec![];
@@ -72,7 +73,7 @@ pub fn parse(input_: &str) -> Text {
 
         let cr = parse_word(chars);
         if cr.consumed > 0 {
-            parts.push(TextRepr::Word(cr.result));
+            parts.push(TextRepr::Word(cr.result, case_preserving_input[i..i + cr.consumed].iter().collect()));
             i += cr.consumed;
             continue;
         }
@@ -87,7 +88,7 @@ pub fn parse(input_: &str) -> Text {
 #[derive(PartialEq, Eq, Debug)]
 pub enum TextRepr {
     Arbitrary(String),
-    Word(Vec<Sound>),
+    Word(Vec<Sound>, String),
 }
 
 #[derive(PartialEq, Eq, Debug)]
@@ -581,14 +582,14 @@ mod tests {
         assert_eq!(result.parts.len(), 6);
         assert_eq!(
             result.parts[0],
-            TextRepr::Word(vec![Sound::A, Sound::L, Sound::A])
+            TextRepr::Word(vec![Sound::A, Sound::L, Sound::A], "ala".to_string())
         );
         assert_eq!(result.parts[1], TextRepr::Arbitrary(" ".to_string()));
-        assert_eq!(result.parts[2], TextRepr::Word(vec![Sound::M, Sound::A]));
+        assert_eq!(result.parts[2], TextRepr::Word(vec![Sound::M, Sound::A], "ma".to_string()));
         assert_eq!(result.parts[3], TextRepr::Arbitrary(" \n".to_string()));
         assert_eq!(
             result.parts[4],
-            TextRepr::Word(vec![Sound::K, Sound::O, Sound::T, Sound::A])
+            TextRepr::Word(vec![Sound::K, Sound::O, Sound::T, Sound::A], "kota".to_string())
         );
         assert_eq!(result.parts[5], TextRepr::Arbitrary("!".to_string()));
     }

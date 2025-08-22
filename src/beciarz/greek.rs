@@ -512,7 +512,7 @@ fn greek_vec_to_sound(input_initial: &[Greek]) -> ParseOfResult {
 #[derive(PartialEq, Eq, Debug)]
 pub enum TextRepr {
     Arbitrary(String),
-    Word(Vec<Greek>),
+    Word(Vec<Greek>, String),
 }
 
 #[derive(PartialEq, Eq, Debug)]
@@ -529,13 +529,13 @@ pub fn utf8_greek_to_text(input: &str) -> super::official::Text {
             TextRepr::Arbitrary(arbitrary) => {
                 super::official::TextRepr::Arbitrary(arbitrary.clone())
             }
-            TextRepr::Word(word) => {
+            TextRepr::Word(word, orig) => {
                 let parse_result = greek_vec_to_sound(word);
                 // TODO ignore count - sanity check
                 if parse_result.consumed != word.len() {
                     panic!("Not all parsed")
                 }
-                super::official::TextRepr::Word(parse_result.result)
+                super::official::TextRepr::Word(parse_result.result, orig.clone())
             }
         })
         .collect::<Vec<super::official::TextRepr>>();
@@ -544,6 +544,7 @@ pub fn utf8_greek_to_text(input: &str) -> super::official::Text {
 }
 
 fn utf8_to_greek(input: &str) -> GreekText {
+    let case_preserving_input = input.chars().collect::<Vec<char>>();
     let chars_input: Vec<char> = input.to_lowercase().chars().collect();
 
     let mut parts = vec![];
@@ -557,7 +558,7 @@ fn utf8_to_greek(input: &str) -> GreekText {
 
         let cr = consume_utf8_word(chars);
         if cr.consumed > 0 {
-            parts.push(TextRepr::Word(cr.result));
+            parts.push(TextRepr::Word(cr.result, case_preserving_input[i..i + cr.consumed].iter().collect()));
             i += cr.consumed;
             continue;
         }
@@ -717,7 +718,7 @@ mod tests {
                 Greek::Beta,
                 Greek::AlphaAcute,
                 Greek::Mu
-            ])
+            ], "ποζδραβάμ".to_string())
         );
         assert_eq!(res.parts[1], TextRepr::Arbitrary(" ".into()));
         assert_eq!(
@@ -731,7 +732,7 @@ mod tests {
                 Greek::Tau,
                 Greek::Kappa,
                 Greek::Omicron
-            ])
+            ], "τέπλύτκο".to_string())
         );
         assert_eq!(res.parts[3], TextRepr::Arbitrary("! :)".into()));
 
@@ -747,7 +748,7 @@ mod tests {
                 Greek::Sigma,
                 Greek::Tau,
                 Greek::Acute,
-            ])
+            ], "ραδοστ'".to_string())
         );
     }
 
