@@ -21,6 +21,7 @@ fn naive_to_string(s: Sound) -> &'static str {
         N => "n",
         Nx => "ń",
         O => "o",
+        Ou => "ó",
         Ox => "ą",
         P => "p",
         R => "r",
@@ -60,12 +61,10 @@ pub fn parse(input_: &str) -> Text {
         }
         let mut j = 0;
         while j < chars.len() && single_naive(chars[j]) == None {
-            // println!("Skipping char: {}", charsi[i]);
             j += 1;
         }
 
         if j > 0 {
-            // println!("Adding arbitrary chars: {}", &chars[..j]);
             parts.push(TextRepr::Arbitrary(chars[..j].iter().collect()));
             i += j;
             continue;
@@ -105,7 +104,6 @@ fn parse_word(input: &[char]) -> ConsumeResult {
     let mut i = 0;
     let mut result = vec![];
     while i < charsi.len() {
-        // println!("MAMY I: {} ", i);
         let chars = &charsi[i..];
         let cr = try_dzx(chars);
         if cr.consumed > 0 {
@@ -186,7 +184,7 @@ fn try_i_samogl(input: &[char]) -> ConsumeResult {
                 consumed: 2,
             },
             'ó' => ConsumeResult {
-                result: vec![J, U],
+                result: vec![J, Ou],
                 consumed: 2,
             },
             'u' => ConsumeResult {
@@ -259,7 +257,7 @@ fn try_ci_si_zi(input: &[char]) -> ConsumeResult {
                             consumed: 3,
                         },
                         'ó' => ConsumeResult {
-                            result: vec![init_sound, Sound::U],
+                            result: vec![init_sound, Sound::Ou],
                             consumed: 3,
                         },
                         'u' => ConsumeResult {
@@ -341,7 +339,7 @@ fn try_dzx(input: &[char]) -> ConsumeResult {
                             consumed: 4,
                         },
                         'ó' => ConsumeResult {
-                            result: vec![Sound::Dx, Sound::U],
+                            result: vec![Sound::Dx, Sound::Ou],
                             consumed: 4,
                         },
                         'u' => ConsumeResult {
@@ -411,7 +409,7 @@ fn single_naive(c: char) -> Option<Sound> {
         'n' => Some(N),
         'ń' => Some(Nx),
         'o' => Some(O),
-        'ó' => Some(U), // TODO wsparcie dla ou
+        'ó' => Some(Ou),
         'p' => Some(P),
         'r' => Some(R),
         's' => Some(S),
@@ -447,7 +445,7 @@ pub fn to_official_utf8(input_initial: &[Sound]) -> String {
             if (c0.is_softened())
                 && c0 != I
                 && c0 != L
-                && (i1 == A || i1 == Ox || i1 == E || i1 == Ex || i1 == O || i1 == U || i1 == I)
+                && (i1 == A || i1 == Ox || i1 == E || i1 == Ex || i1 == O || i1 == Ou || i1 == U || i1 == I)
             {
                 // if c0 != Rx {
                 match c0 {
@@ -471,7 +469,7 @@ pub fn to_official_utf8(input_initial: &[Sound]) -> String {
             // wje ->wie
             if (c0 == W || c0 == K || c0 == M || c0 == G) && i1 == J && input.len() > 2 {
                 let i2 = input[2];
-                if i2 == A || i2 == Ox || i2 == E || i2 == Ex || i2 == O || i2 == U {
+                if i2 == A || i2 == Ox || i2 == E || i2 == Ex || i2 == O  || i2 == Ou|| i2 == U {
                     if c0 == W {
                         res.push('w');
                     } else if c0 == K {
@@ -515,6 +513,8 @@ mod tests {
         assert_eq!(to_official_utf8(&input), "cieplutko");
         let input = vec![Z, D, R, O, W, J, E];
         assert_eq!(to_official_utf8(&input), "zdrowie");
+        let input = vec![M, J, Ou, D];
+        assert_eq!(to_official_utf8(&input), "miód");
     }
 
     #[test]

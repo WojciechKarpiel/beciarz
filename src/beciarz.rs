@@ -56,20 +56,22 @@ mod test {
             "oj przestań się mazać, przyjechaliśmy się tu dobrze bawić.",
             "ο' πρέσταν' σή μαζατ', πρίέχαλίσ'μι σή τυ δομπρέ μπαβίτ'.",
         );
-        // UWAGA ó->u
         assert_both_ways(
-            "gdzie są dziewczęta, gdzie jest kurczę wudka, co to jest za muzyka, gdzie jest dubstep",
-            "γδέ σω δέβθητα, γδέ έστ κυρθη βυδκα, τσο το έστ ζα μυζικα, γδέ έστ δυμπστεπ",
+            "gdzie są dziewczęta, gdzie jest kurczę wódka, co to jest za muzyka, gdzie jest dubstep",
+            "γδέ σω δέβθητα, γδέ έστ κυρθη βουδκα, τσο το έστ ζα μυζικα, γδέ έστ δυμπστεπ",
         );
-        //KNIEC uwagi
-
 
         assert_both_ways("bardziej", "μπαρδέ'");
 
-        //ó->u
         assert_both_ways(
-            "myślę, że nikt nie miał do czynienia z bardziej pożytecznymi przeciwnościami, o ile tylko postanowisz wykorzystać je w dobry sposub.",
-             "μισλή, ξε νίκτ νέ μάλ δο θινένά ζ μπαρδέ' ποξιτεθνιμί πρέτίβνοστάμί, ο ίλέ τιλ'κο ποστανοβίψ βικορίστατ' έ β δομπρι σποσυμπ.");
+            "myślę, że nikt nie miał do czynienia z bardziej pożytecznymi przeciwnościami, o ile tylko postanowisz wykorzystać je w dobry sposób.",
+            "μισλή, ξε νίκτ νέ μάλ δο θινένά ζ μπαρδέ' ποξιτεθνιμί πρέτίβνοστάμί, ο ίλέ τιλ'κο ποστανοβίψ βικορίστατ' έ β δομπρι σποσουμπ.",
+        );
+
+        assert_both_ways("mówi", "μουβί");
+        assert_both_ways("miodu", "μόδυ");
+        assert_both_ways("miód", "μόυδ");
+        assert_both_ways("dziób", "δόυμπ");
     }
 
     #[allow(dead_code)]
@@ -137,6 +139,7 @@ pub enum Sound {
     Nx,
     O,
     Ox,
+    Ou, // nie prawda
     P,
     R,
     Rx, // nie prawda
@@ -177,7 +180,8 @@ impl Sound {
             | Sound::Y
             | Sound::O
             | Sound::Ox
-            | Sound::U => true,
+            | Sound::U
+            | Sound::Ou => true,
             _ => false,
         }
     }

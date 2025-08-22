@@ -47,6 +47,7 @@ fn consume_naive(input: Sound) -> &'static [Greek] {
         Sound::Nx => &[Nu, Acute],
         Sound::O => &[Omicron],
         Sound::Ox => &[Omega],
+        Sound::Ou => &[Omicron, Upsilon],
         Sound::P => &[Pi],
         Sound::R => &[Rho],
         Sound::S => &[Sigma],
@@ -82,17 +83,18 @@ fn softened_sound_to_base_greek(s: Sound) -> Greek {
     }
 }
 
-fn soften_vowel(sound: Sound) -> Greek {
+fn soften_vowel(sound: Sound) -> &'static [Greek] {
     use Greek::*;
     use Sound::*;
     match sound {
-        A => AlphaAcute,
-        E => EpsilonAcute,
-        Ex => EtaAcute,
-        I => IotaAcute,
-        O => OmicronAcute,
-        Ox => OmegaAcute,
-        U => UpsilonAcute,
+        A => &[AlphaAcute],
+        E => &[EpsilonAcute],
+        Ex => &[EtaAcute],
+        I => &[IotaAcute],
+        O => &[OmicronAcute],
+        Ou => &[OmicronAcute, Upsilon],
+        Ox => &[OmegaAcute],
+        U => &[UpsilonAcute],
         _ => panic!("Unexpected vowel for softening: {:?}", sound),
     }
 }
@@ -126,10 +128,10 @@ fn consume_greek(input: &[Sound]) -> ConsumeResult {
         let following_vowel = input.get(softened_count).cloned().filter(|x| x.is_vowel());
         let total_consumed = softened_count + following_vowel.map_or(0, |_| 1);
 
-        let last_greek: Greek = match following_vowel {
-            Some(Y) => Greek::IotaAcute, // SPECIAL CASE FOR "RZY", TODO MAKE SURE "RZ" IS PRESENT
-            Some(vowel) => soften_vowel(vowel), // todo what if not-softened
-            None => Greek::Acute,
+        let last_greek: &[Greek] = match following_vowel {
+            Some(Y) => &[Greek::IotaAcute], // SPECIAL CASE FOR "RZY", TODO MAKE SURE "RZ" IS PRESENT
+            Some(vowel) => soften_vowel(vowel),
+            None => &[Greek::Acute],
         };
 
         let mut result = input[..softened_count]
@@ -137,7 +139,7 @@ fn consume_greek(input: &[Sound]) -> ConsumeResult {
             .map(|&s| softened_sound_to_base_greek(s))
             .collect::<Vec<Greek>>();
 
-        result.push(last_greek);
+        result.extend_from_slice(last_greek);
 
         return ConsumeResult {
             result,
@@ -148,9 +150,9 @@ fn consume_greek(input: &[Sound]) -> ConsumeResult {
     use Sound::*;
     if i0 == Sound::J {
         let i1 = input.get(1).unwrap().clone();
-        if i1 == E || i1 == A || i1 == Ex || i1 == Ox || i1 == U {
+        if i1 == E || i1 == A || i1 == Ex || i1 == Ox || i1 == U || i1 == Ou || i1 == O {
             return ConsumeResult {
-                result: vec![soften_vowel(i1)],
+                result: soften_vowel(i1).to_vec(),
                 consumed: 2,
             };
             // TODO Case for I Y
@@ -383,7 +385,6 @@ fn greek_vec_to_sound(input_initial: &[Greek]) -> ParseOfResult {
     while i < input_initial.len() {
         let input = &input_initial[i..];
         let c0 = input[0];
-
         if c0 == Break {
             i += 1;
             continue;
@@ -448,8 +449,13 @@ fn greek_vec_to_sound(input_initial: &[Greek]) -> ParseOfResult {
                     Greek::OmegaAcute => Ox,
                     _ => panic!("no soft :("),
                 };
-                result.push(c);
-                i += 1;
+                if c == O && input.get(softened_count + 1) == Some(&Upsilon) {
+                    result.push(Ou);
+                    i += 2;
+                } else {
+                    result.push(c);
+                    i += 1;
+                }
             }
 
             continue;
@@ -476,6 +482,17 @@ fn greek_vec_to_sound(input_initial: &[Greek]) -> ParseOfResult {
             if c0 == Mu && c1 == Pi {
                 i += 2;
                 result.push(B);
+                continue;
+            }
+            if c0 == Omicron && c1 == Upsilon {
+                i += 2;
+                result.push(Ou);
+                continue;
+            }
+            if c0 == OmicronAcute && c1 == Upsilon {
+                i += 2;
+                result.push(J);
+                result.push(Ou);
                 continue;
             }
         }
@@ -589,7 +606,7 @@ mod tests {
     fn gr_vec_to_sound_vec() {
         use Greek::*;
         use Sound::*;
-        let r = greek_vec_to_sound(&vec![Delta, Omicron, Mu, Pi, Rho, Omicron]);
+        let r: ParseOfResult = greek_vec_to_sound(&vec![Delta, Omicron, Mu, Pi, Rho, Omicron]);
         assert_eq!(
             r,
             ParseOfResult {
@@ -670,6 +687,16 @@ mod tests {
             ParseOfResult {
                 result: vec![B, A, R, Dx, E, J],
                 consumed: 7
+            }
+        );
+
+        let q = vec![Mu, OmicronAcute, Upsilon, Delta];
+        let r = greek_vec_to_sound(&q);
+        assert_eq!(
+            r,
+            ParseOfResult {
+                result: vec![M, J, Ou, D],
+                consumed: 4
             }
         );
     }
@@ -777,6 +804,8 @@ mod tests {
         assert_eq!(to_greek(&vec![C, O]), "τσο");
         assert_eq!(to_greek(&vec![Tx, Ex]), "τή");
         assert_eq!(to_greek(&vec![S, T, R, A, Tx, I, Lx]), "στρατίλ");
+        assert_eq!(to_greek(&vec![M, J, U, D]), "μύδ");
+        assert_eq!(to_greek(&vec![M, J, Ou, D]), "μόυδ");
     }
 
     //  #[test]
