@@ -6,11 +6,11 @@ pub fn official_to_greek(input: &str) -> String {
     text.parts
         .iter()
         .map(|part| match part {
-            official::TextRepr::Word(sounds, orig) => {
-                let res = greek::to_greek(sounds);
-                handle_capitalisation(orig, res)
+            official::TextRepr::Word(sounds, capitalisation_mode) => {
+                let lowercase_result = greek::to_greek(sounds);
+                capitalisation_mode.apply(&lowercase_result)
             }
-            official::TextRepr::Arbitrary(text) => text.clone(), // todo noclone
+            official::TextRepr::Arbitrary(text) => text.clone(),
         })
         .collect::<Vec<_>>()
         .join("")
@@ -22,36 +22,54 @@ pub fn greek_to_official(input: &str) -> String {
     text.parts
         .iter()
         .map(|part| match part {
-            official::TextRepr::Word(sounds, orig) => {
-                let res = official::to_official_utf8(sounds);
-                handle_capitalisation(orig, res)
+            official::TextRepr::Word(sounds, capitalisation_mode) => {
+                let lowercase_result = official::to_official_utf8(sounds);
+                capitalisation_mode.apply(&lowercase_result)
             }
-            official::TextRepr::Arbitrary(text) => text.clone(), // todo noclone
+            official::TextRepr::Arbitrary(text) => text.clone(),
         })
         .collect::<Vec<_>>()
         .join("")
 }
 
-fn handle_capitalisation(input: &str, output: String) -> String {
-    if input.is_empty() {
-        return output;
-    }
-
-    if input.chars().all(|c| c.is_uppercase()) {
-        return output.to_uppercase();
-    }
-
-    let mut it = input.chars();
-    let fst = it.next().unwrap();
-    if fst.is_uppercase() {
-        let mut c = output.chars();
-       return match c.next() {
-            None => String::new(),
-            Some(f) => f.to_uppercase().chain(c).collect(),
+#[derive(PartialEq, Eq, Debug, Clone, Copy)]
+enum CapitalisationMode {
+    Lowercase,
+    Uppercase,
+    Titlecase,
+}
+impl CapitalisationMode {
+    fn apply(self, lowercase_input: &str) -> String {
+        match self {
+            CapitalisationMode::Lowercase => lowercase_input.to_string(),
+            CapitalisationMode::Uppercase => lowercase_input.to_uppercase(),
+            CapitalisationMode::Titlecase => {
+                let mut c = lowercase_input.chars();
+                return match c.next() {
+                    None => String::new(),
+                    Some(f) => f.to_uppercase().chain(c).collect(),
+                };
+            }
         }
     }
 
-    return output;
+    fn detect(input: &[char]) -> Self {
+        if input.is_empty() {
+            return CapitalisationMode::Lowercase;
+        }
+
+        if input.iter().all(|c| c.is_uppercase()) {
+            return CapitalisationMode::Uppercase;
+        }
+
+        let mut it = input.iter();
+        let fst = it.next().unwrap();
+        if fst.is_uppercase() {
+            return CapitalisationMode::Titlecase;
+        }
+
+        return CapitalisationMode::Lowercase;
+    }
 }
 
 mod test {
@@ -108,6 +126,8 @@ mod test {
         assert_both_ways("miodu", "μόδυ");
         assert_both_ways("miód", "μόυδ");
         assert_both_ways("dziób", "δόυμπ");
+
+        assert_both_ways("zjem", "ζ\\έμ");
     }
 
     #[allow(dead_code)]

@@ -1,3 +1,5 @@
+use crate::beciarz::CapitalisationMode;
+
 use super::Sound;
 use super::Sound::*;
 
@@ -73,7 +75,10 @@ pub fn parse(input_: &str) -> Text {
 
         let cr = parse_word(chars);
         if cr.consumed > 0 {
-            parts.push(TextRepr::Word(cr.result, case_preserving_input[i..i + cr.consumed].iter().collect()));
+            parts.push(TextRepr::Word(
+                cr.result,
+                CapitalisationMode::detect(&case_preserving_input[i..i + cr.consumed]),
+            ));
             i += cr.consumed;
             continue;
         }
@@ -88,7 +93,7 @@ pub fn parse(input_: &str) -> Text {
 #[derive(PartialEq, Eq, Debug)]
 pub enum TextRepr {
     Arbitrary(String),
-    Word(Vec<Sound>, String),
+    Word(Vec<Sound>, CapitalisationMode),
 }
 
 #[derive(PartialEq, Eq, Debug)]
@@ -443,11 +448,7 @@ pub fn to_official_utf8(input_initial: &[Sound]) -> String {
         if input.len() > 1 {
             // ći -> ci; śe -> się
             let i1 = input[1];
-            if (c0.is_softened())
-                && c0 != I
-                && c0 != L
-                && (i1.is_vowel() && i1 != Y)
-            {
+            if (c0.is_softened()) && c0 != I && c0 != L && (i1.is_vowel() && i1 != Y) {
                 // if c0 != Rx {
                 match c0 {
                     Sound::Sx => res.push('s'),
@@ -582,14 +583,23 @@ mod tests {
         assert_eq!(result.parts.len(), 6);
         assert_eq!(
             result.parts[0],
-            TextRepr::Word(vec![Sound::A, Sound::L, Sound::A], "ala".to_string())
+            TextRepr::Word(
+                vec![Sound::A, Sound::L, Sound::A],
+                CapitalisationMode::Lowercase
+            )
         );
         assert_eq!(result.parts[1], TextRepr::Arbitrary(" ".to_string()));
-        assert_eq!(result.parts[2], TextRepr::Word(vec![Sound::M, Sound::A], "ma".to_string()));
+        assert_eq!(
+            result.parts[2],
+            TextRepr::Word(vec![Sound::M, Sound::A], CapitalisationMode::Lowercase)
+        );
         assert_eq!(result.parts[3], TextRepr::Arbitrary(" \n".to_string()));
         assert_eq!(
             result.parts[4],
-            TextRepr::Word(vec![Sound::K, Sound::O, Sound::T, Sound::A], "kota".to_string())
+            TextRepr::Word(
+                vec![Sound::K, Sound::O, Sound::T, Sound::A],
+                CapitalisationMode::Lowercase
+            )
         );
         assert_eq!(result.parts[5], TextRepr::Arbitrary("!".to_string()));
     }

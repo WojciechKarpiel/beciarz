@@ -3,6 +3,8 @@ struct ConsumeResult {
     consumed: usize,
 }
 
+use crate::beciarz::CapitalisationMode;
+
 use super::Sound;
 
 fn do_the_job(input: &[Sound]) -> Vec<Greek> {
@@ -512,7 +514,7 @@ fn greek_vec_to_sound(input_initial: &[Greek]) -> ParseOfResult {
 #[derive(PartialEq, Eq, Debug)]
 pub enum TextRepr {
     Arbitrary(String),
-    Word(Vec<Greek>, String),
+    Word(Vec<Greek>, CapitalisationMode),
 }
 
 #[derive(PartialEq, Eq, Debug)]
@@ -558,7 +560,7 @@ fn utf8_to_greek(input: &str) -> GreekText {
 
         let cr = consume_utf8_word(chars);
         if cr.consumed > 0 {
-            parts.push(TextRepr::Word(cr.result, case_preserving_input[i..i + cr.consumed].iter().collect()));
+            parts.push(TextRepr::Word(cr.result, super::CapitalisationMode::detect(&case_preserving_input[i..i + cr.consumed])));
             i += cr.consumed;
             continue;
         }
@@ -718,7 +720,7 @@ mod tests {
                 Greek::Beta,
                 Greek::AlphaAcute,
                 Greek::Mu
-            ], "ποζδραβάμ".to_string())
+            ], CapitalisationMode::Lowercase)
         );
         assert_eq!(res.parts[1], TextRepr::Arbitrary(" ".into()));
         assert_eq!(
@@ -732,7 +734,7 @@ mod tests {
                 Greek::Tau,
                 Greek::Kappa,
                 Greek::Omicron
-            ], "τέπλύτκο".to_string())
+            ], CapitalisationMode::Lowercase)
         );
         assert_eq!(res.parts[3], TextRepr::Arbitrary("! :)".into()));
 
@@ -748,7 +750,7 @@ mod tests {
                 Greek::Sigma,
                 Greek::Tau,
                 Greek::Acute,
-            ], "ραδοστ'".to_string())
+            ], CapitalisationMode::Lowercase)
         );
     }
 
