@@ -1,16 +1,26 @@
+use beciarz_core::{greek_to_official, official_to_greek};
 use clap::{Parser, ValueEnum};
 use std::io::{self, Read};
-use beciarz_core::{official_to_greek, greek_to_official};
 
 #[derive(Parser)]
 #[command(name = "beciarz", about = "tłumaczy alfabety")]
 struct Cli {
     /// Input format (g/grecki or o/oficjalny)
-    #[arg(short = 'i', long = "input-format", value_enum, default_value = "oficjalny")]
+    #[arg(
+        short = 'i',
+        long = "input-format",
+        value_enum,
+        default_value = "oficjalny"
+    )]
     input_fmt: Format,
 
     /// Output format (g/grecki or o/oficjalny)
-    #[arg(short = 'o', long = "output-format", value_enum, default_value = "grecki")]
+    #[arg(
+        short = 'o',
+        long = "output-format",
+        value_enum,
+        default_value = "grecki"
+    )]
     output_fmt: Format,
 
     /// Do not print the trailing newline (like echo -n)
@@ -56,9 +66,9 @@ fn main() -> io::Result<()> {
 
     // 3. Output
     if cli.no_newline {
-        print!("{}", result);
+        print!("{result}");
     } else {
-        println!("{}", result);
+        println!("{result}");
     }
 
     Ok(())

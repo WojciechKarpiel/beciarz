@@ -45,10 +45,10 @@ impl CapitalisationMode {
             CapitalisationMode::Uppercase => lowercase_input.to_uppercase(),
             CapitalisationMode::Titlecase => {
                 let mut c = lowercase_input.chars();
-                return match c.next() {
+                match c.next() {
                     None => String::new(),
                     Some(f) => f.to_uppercase().chain(c).collect(),
-                };
+                }
             }
         }
     }
@@ -68,7 +68,7 @@ impl CapitalisationMode {
             return CapitalisationMode::Titlecase;
         }
 
-        return CapitalisationMode::Lowercase;
+        CapitalisationMode::Lowercase
     }
 }
 
@@ -214,32 +214,32 @@ pub enum Sound {
 
 impl Sound {
     fn is_softened(self) -> bool {
-        match self {
+        matches!(
+            self,
             Sound::I
-            | Sound::Sx
-            | Sound::Zx
-            | Sound::L
-            | Sound::Nx
-            | Sound::Tx
-            | Sound::Rx
-            | Sound::Dx => true,
-            _ => false,
-        }
+                | Sound::Sx
+                | Sound::Zx
+                | Sound::L
+                | Sound::Nx
+                | Sound::Tx
+                | Sound::Rx
+                | Sound::Dx
+        )
     }
 
     fn is_vowel(self) -> bool {
-        match self {
+        matches!(
+            self,
             Sound::A
-            | Sound::E
-            | Sound::Ex
-            | Sound::I
-            | Sound::Y
-            | Sound::O
-            | Sound::Ox
-            | Sound::U
-            | Sound::Ou => true,
-            _ => false,
-        }
+                | Sound::E
+                | Sound::Ex
+                | Sound::I
+                | Sound::Y
+                | Sound::O
+                | Sound::Ox
+                | Sound::U
+                | Sound::Ou
+        )
     }
 
     // fn transferable_softening(self) -> bool {

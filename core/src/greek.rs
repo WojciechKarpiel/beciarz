@@ -20,7 +20,7 @@ fn do_the_job(input: &[Sound]) -> Vec<Greek> {
     result
 }
 
-pub fn to_greek(input: &Vec<Sound>) -> String {
+pub fn to_greek(input: &[Sound]) -> String {
     let greek_chars = do_the_job(input);
     greek_chars.iter().map(|&g| to_char(g)).collect()
 }
@@ -81,7 +81,7 @@ fn softened_sound_to_base_greek(s: Sound) -> Greek {
         I => Iota,
         Rx => Rho,
         Dx => Delta,
-        _ => panic!("Unexpected softened sound: {:?}", s),
+        _ => panic!("Unexpected softened sound: {s:?}"),
     }
 }
 
@@ -97,12 +97,12 @@ fn soften_vowel(sound: Sound) -> &'static [Greek] {
         Ou => &[OmicronAcute, Upsilon],
         Ox => &[OmegaAcute],
         U => &[UpsilonAcute],
-        _ => panic!("Unexpected vowel for softening: {:?}", sound),
+        _ => panic!("Unexpected vowel for softening: {sound:?}"),
     }
 }
 
 fn consume_greek(input: &[Sound]) -> ConsumeResult {
-    if input.len() == 0 {
+    if input.is_empty() {
         return ConsumeResult {
             result: vec![],
             consumed: 0,
@@ -151,7 +151,7 @@ fn consume_greek(input: &[Sound]) -> ConsumeResult {
 
     use Sound::*;
     if i0 == Sound::J {
-        let i1 = input.get(1).unwrap().clone();
+        let i1 = *input.get(1).unwrap();
         if i1.is_vowel() && i1 != Y && i1 != I {
             return ConsumeResult {
                 result: soften_vowel(i1).to_vec(),
@@ -167,7 +167,7 @@ fn consume_greek(input: &[Sound]) -> ConsumeResult {
     }
 
     // check for break
-    let i1 = input.get(1).unwrap().clone();
+    let i1 = *input.get(1).unwrap();
     if i1 == J || i1 == I {
         //|| i1 == Nx || i1 == Zx || i1 == Sx || i1 == Tx  || i1 == Dx ||i1==Rx{
         if i0 == N || i0 == Z || i0 == S || i0 == T || i0 == D || i0 == R {
@@ -180,10 +180,10 @@ fn consume_greek(input: &[Sound]) -> ConsumeResult {
         }
     }
 
-    return ConsumeResult {
+    ConsumeResult {
         result: consume_naive(i0).to_vec(),
         consumed: 1,
-    };
+    }
 }
 
 #[derive(PartialEq, Eq, Debug, Clone, Copy)]
@@ -225,25 +225,22 @@ pub enum Greek {
 
 impl Greek {
     fn is_softening(self) -> bool {
-        match self {
+        matches!(
+            self,
             Greek::Acute
-            | Greek::AlphaAcute
-            | Greek::EpsilonAcute
-            | Greek::EtaAcute
-            | Greek::IotaAcute
-            | Greek::OmicronAcute
-            | Greek::UpsilonAcute
-            | Greek::OmegaAcute => true,
-            _ => false,
-        }
+                | Greek::AlphaAcute
+                | Greek::EpsilonAcute
+                | Greek::EtaAcute
+                | Greek::IotaAcute
+                | Greek::OmicronAcute
+                | Greek::UpsilonAcute
+                | Greek::OmegaAcute
+        )
     }
 
     fn can_be_softened(self) -> bool {
         use Greek::*;
-        match self {
-            Rho | Nu | Zeta | Sigma | Delta | Tau | Lambda => true,
-            _ => false,
-        }
+        matches!(self, Rho | Nu | Zeta | Sigma | Delta | Tau | Lambda)
     }
 }
 
@@ -416,8 +413,8 @@ fn greek_vec_to_sound(input_initial: &[Greek]) -> ParseOfResult {
             && input.len() > softened_count
             && input[softened_count].is_softening()
         {
-            for j in 0..softened_count {
-                let q = match input[j] {
+            for inpj in input.iter().take(softened_count) {
+                let q = match inpj {
                     Rho => Rx,
                     Nu => Nx,
                     Zeta => Zx,
@@ -537,7 +534,7 @@ pub fn utf8_greek_to_text(input: &str) -> super::official::Text {
                 if parse_result.consumed != word.len() {
                     panic!("Not all parsed")
                 }
-                super::official::TextRepr::Word(parse_result.result, orig.clone())
+                super::official::TextRepr::Word(parse_result.result, *orig)
             }
         })
         .collect::<Vec<super::official::TextRepr>>();
@@ -560,13 +557,16 @@ fn utf8_to_greek(input: &str) -> GreekText {
 
         let cr = consume_utf8_word(chars);
         if cr.consumed > 0 {
-            parts.push(TextRepr::Word(cr.result, super::CapitalisationMode::detect(&case_preserving_input[i..i + cr.consumed])));
+            parts.push(TextRepr::Word(
+                cr.result,
+                super::CapitalisationMode::detect(&case_preserving_input[i..i + cr.consumed]),
+            ));
             i += cr.consumed;
             continue;
         }
 
         let mut j = 0;
-        while j < chars.len() && char_to_greek(chars[j]) == None {
+        while j < chars.len() && char_to_greek(chars[j]).is_none() {
             j += 1;
         }
 
@@ -609,7 +609,7 @@ mod tests {
     fn gr_vec_to_sound_vec() {
         use Greek::*;
         use Sound::*;
-        let r: ParseOfResult = greek_vec_to_sound(&vec![Delta, Omicron, Mu, Pi, Rho, Omicron]);
+        let r: ParseOfResult = greek_vec_to_sound(&[Delta, Omicron, Mu, Pi, Rho, Omicron]);
         assert_eq!(
             r,
             ParseOfResult {
@@ -618,9 +618,7 @@ mod tests {
             }
         );
 
-        let r = greek_vec_to_sound(&vec![
-            Delta, AlphaAcute, Mu, Acute, Rho, IotaAcute, Nu, IotaAcute,
-        ]);
+        let r = greek_vec_to_sound(&[Delta, AlphaAcute, Mu, Acute, Rho, IotaAcute, Nu, IotaAcute]);
         assert_eq!(
             r,
             ParseOfResult {
@@ -629,7 +627,7 @@ mod tests {
             }
         );
 
-        let r = greek_vec_to_sound(&vec![Mu, Alpha, Tau, Sigma, Kappa, IotaAcute]);
+        let r = greek_vec_to_sound(&[Mu, Alpha, Tau, Sigma, Kappa, IotaAcute]);
         assert_eq!(
             r,
             ParseOfResult {
@@ -710,31 +708,37 @@ mod tests {
         assert_eq!(res.parts.len(), 4);
         assert_eq!(
             res.parts[0],
-            TextRepr::Word(vec![
-                Greek::Pi,
-                Greek::Omicron,
-                Greek::Zeta,
-                Greek::Delta,
-                Greek::Rho,
-                Greek::Alpha,
-                Greek::Beta,
-                Greek::AlphaAcute,
-                Greek::Mu
-            ], CapitalisationMode::Lowercase)
+            TextRepr::Word(
+                vec![
+                    Greek::Pi,
+                    Greek::Omicron,
+                    Greek::Zeta,
+                    Greek::Delta,
+                    Greek::Rho,
+                    Greek::Alpha,
+                    Greek::Beta,
+                    Greek::AlphaAcute,
+                    Greek::Mu
+                ],
+                CapitalisationMode::Lowercase
+            )
         );
         assert_eq!(res.parts[1], TextRepr::Arbitrary(" ".into()));
         assert_eq!(
             res.parts[2],
-            TextRepr::Word(vec![
-                Greek::Tau,
-                Greek::EpsilonAcute,
-                Greek::Pi,
-                Greek::Lambda,
-                Greek::UpsilonAcute,
-                Greek::Tau,
-                Greek::Kappa,
-                Greek::Omicron
-            ], CapitalisationMode::Lowercase)
+            TextRepr::Word(
+                vec![
+                    Greek::Tau,
+                    Greek::EpsilonAcute,
+                    Greek::Pi,
+                    Greek::Lambda,
+                    Greek::UpsilonAcute,
+                    Greek::Tau,
+                    Greek::Kappa,
+                    Greek::Omicron
+                ],
+                CapitalisationMode::Lowercase
+            )
         );
         assert_eq!(res.parts[3], TextRepr::Arbitrary("! :)".into()));
 
@@ -742,15 +746,18 @@ mod tests {
         assert_eq!(res.parts.len(), 1);
         assert_eq!(
             res.parts[0],
-            TextRepr::Word(vec![
-                Greek::Rho,
-                Greek::Alpha,
-                Greek::Delta,
-                Greek::Omicron,
-                Greek::Sigma,
-                Greek::Tau,
-                Greek::Acute,
-            ], CapitalisationMode::Lowercase)
+            TextRepr::Word(
+                vec![
+                    Greek::Rho,
+                    Greek::Alpha,
+                    Greek::Delta,
+                    Greek::Omicron,
+                    Greek::Sigma,
+                    Greek::Tau,
+                    Greek::Acute,
+                ],
+                CapitalisationMode::Lowercase
+            )
         );
     }
 

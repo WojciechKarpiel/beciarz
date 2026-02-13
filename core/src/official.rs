@@ -5,7 +5,8 @@ use super::Sound::*;
 
 fn naive_to_string(s: Sound) -> &'static str {
     use Sound::*;
-    let qq = match s {
+
+    (match s {
         A => "a",
         B => "b",
         C => "c",
@@ -44,9 +45,7 @@ fn naive_to_string(s: Sound) -> &'static str {
         Dx => "dź",
         Dh => "dż",
         Ex => "ę",
-    };
-
-    qq
+    }) as _
 }
 
 pub fn parse(input_: &str) -> Text {
@@ -63,7 +62,7 @@ pub fn parse(input_: &str) -> Text {
             break;
         }
         let mut j = 0;
-        while j < chars.len() && single_naive(chars[j]) == None {
+        while j < chars.len() && single_naive(chars[j]).is_none() {
             j += 1;
         }
 
@@ -154,7 +153,7 @@ fn parse_word(input: &[char]) -> ConsumeResult {
     }
 
     ConsumeResult {
-        result: result,
+        result,
         consumed: i,
     }
 }
@@ -162,10 +161,10 @@ fn parse_word(input: &[char]) -> ConsumeResult {
 // UWAGA TO NIE ZADZIAŁA ZAWSZE
 fn try_i_samogl(input: &[char]) -> ConsumeResult {
     if input.len() < 2 || input[0] != 'i' {
-        return ConsumeResult {
+        ConsumeResult {
             result: vec![],
             consumed: 0,
-        };
+        }
     } else {
         let i1 = input[1];
         match i1 {
@@ -237,49 +236,47 @@ fn try_ci_si_zi(input: &[char]) -> ConsumeResult {
                         consumed: 0,
                     }
                 }
-            } else {
-                if input[1] == 'i' {
-                    let i2 = input[2];
+            } else if input[1] == 'i' {
+                let i2 = input[2];
 
-                    match i2 {
-                        'a' => ConsumeResult {
-                            result: vec![init_sound, Sound::A],
-                            consumed: 3,
-                        },
-                        'ą' => ConsumeResult {
-                            result: vec![init_sound, Sound::Ox],
-                            consumed: 3,
-                        },
-                        'e' => ConsumeResult {
-                            result: vec![init_sound, Sound::E],
-                            consumed: 3,
-                        },
-                        'ę' => ConsumeResult {
-                            result: vec![init_sound, Sound::Ex],
-                            consumed: 3,
-                        },
-                        'o' => ConsumeResult {
-                            result: vec![init_sound, Sound::O],
-                            consumed: 3,
-                        },
-                        'ó' => ConsumeResult {
-                            result: vec![init_sound, Sound::Ou],
-                            consumed: 3,
-                        },
-                        'u' => ConsumeResult {
-                            result: vec![init_sound, Sound::U],
-                            consumed: 3,
-                        },
-                        _ => ConsumeResult {
-                            result: vec![init_sound, Sound::I],
-                            consumed: 2,
-                        },
-                    }
-                } else {
-                    ConsumeResult {
-                        result: vec![],
-                        consumed: 0,
-                    }
+                match i2 {
+                    'a' => ConsumeResult {
+                        result: vec![init_sound, Sound::A],
+                        consumed: 3,
+                    },
+                    'ą' => ConsumeResult {
+                        result: vec![init_sound, Sound::Ox],
+                        consumed: 3,
+                    },
+                    'e' => ConsumeResult {
+                        result: vec![init_sound, Sound::E],
+                        consumed: 3,
+                    },
+                    'ę' => ConsumeResult {
+                        result: vec![init_sound, Sound::Ex],
+                        consumed: 3,
+                    },
+                    'o' => ConsumeResult {
+                        result: vec![init_sound, Sound::O],
+                        consumed: 3,
+                    },
+                    'ó' => ConsumeResult {
+                        result: vec![init_sound, Sound::Ou],
+                        consumed: 3,
+                    },
+                    'u' => ConsumeResult {
+                        result: vec![init_sound, Sound::U],
+                        consumed: 3,
+                    },
+                    _ => ConsumeResult {
+                        result: vec![init_sound, Sound::I],
+                        consumed: 2,
+                    },
+                }
+            } else {
+                ConsumeResult {
+                    result: vec![],
+                    consumed: 0,
                 }
             }
         }
@@ -459,7 +456,7 @@ pub fn to_official_utf8(input_initial: &[Sound]) -> String {
                         res.push('d');
                         res.push('z');
                     }
-                    other => panic!("ni wim co to: {:?}", other),
+                    other => panic!("ni wim co to: {other:?}"),
                 }
                 i += 1;
                 if i1 != I {
@@ -481,7 +478,7 @@ pub fn to_official_utf8(input_initial: &[Sound]) -> String {
                     } else if c0 == G {
                         res.push('g');
                     } else {
-                        panic!("Unexpected sound: {:?}", c0);
+                        panic!("Unexpected sound: {c0:?}");
                     }
                     i += 1; // consume W/K
                     res.push('i');
