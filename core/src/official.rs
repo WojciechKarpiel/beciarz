@@ -1,4 +1,4 @@
-use crate::beciarz::CapitalisationMode;
+use crate::CapitalisationMode;
 
 use super::Sound;
 use super::Sound::*;

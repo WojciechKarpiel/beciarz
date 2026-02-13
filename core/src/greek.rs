@@ -3,7 +3,7 @@ struct ConsumeResult {
     consumed: usize,
 }
 
-use crate::beciarz::CapitalisationMode;
+use crate::CapitalisationMode;
 
 use super::Sound;
 
